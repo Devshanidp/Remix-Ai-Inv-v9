@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Send, Image as ImageIcon, Upload, Eye, X, Check, MapPin, Calendar, Share2, Copy, Users, Wand2, Settings, Pencil, Music, Play, Pause } from 'lucide-react';
-import { GoogleGenAI } from '@google/genai';
 import { db } from './firebase';
 import { doc, setDoc, getDoc, collection, addDoc, onSnapshot, updateDoc } from 'firebase/firestore';
 
@@ -130,37 +129,26 @@ const compressImage = async (file: File, isMultiple: boolean = false): Promise<s
   });
 };
 
-const compressBase64Image = async (base64Str: string): Promise<string> => {
-  return new Promise((resolve, reject) => {
-    const img = new Image();
-    img.src = base64Str;
-    img.onload = () => {
-      const canvas = document.createElement('canvas');
-      const MAX_WIDTH = 800;
-      const MAX_HEIGHT = 800;
-      let width = img.width;
-      let height = img.height;
-
-      if (width > height) {
-        if (width > MAX_WIDTH) {
-          height *= MAX_WIDTH / width;
-          width = MAX_WIDTH;
-        }
-      } else {
-        if (height > MAX_HEIGHT) {
-          width *= MAX_HEIGHT / height;
-          height = MAX_HEIGHT;
-        }
-      }
-      canvas.width = width;
-      canvas.height = height;
-      const ctx = canvas.getContext('2d');
-      ctx?.drawImage(img, 0, 0, width, height);
-      resolve(canvas.toDataURL('image/jpeg', 0.7));
-    };
-    img.onerror = (err) => reject(err);
-  });
+const DEFAULT_WEDDING_IMAGES = {
+  banner: 'https://images.unsplash.com/photo-1511285560929-80b456fea0bc?auto=format&fit=crop&w=1200&q=80',
+  groom: 'https://images.unsplash.com/photo-1550005809-91ad75fb315f?auto=format&fit=crop&w=400&q=80',
+  bride: 'https://images.unsplash.com/photo-1546822452-97216656c07a?auto=format&fit=crop&w=400&q=80',
+  gallery: [
+    'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=800&q=80',
+    'https://images.unsplash.com/photo-1511285560929-80b456fea0bc?auto=format&fit=crop&w=800&q=80',
+    'https://images.unsplash.com/photo-1520854221256-17451cc331bf?auto=format&fit=crop&w=800&q=80',
+    'https://images.unsplash.com/photo-1532712938310-34cb3982ef74?auto=format&fit=crop&w=800&q=80',
+  ],
+  memories: [
+    'https://images.unsplash.com/photo-1522673607200-164d1b6ce486?auto=format&fit=crop&w=800&q=80',
+    'https://images.unsplash.com/photo-1515934751635-c81c6bc9a2d8?auto=format&fit=crop&w=800&q=80',
+    'https://images.unsplash.com/photo-1469334031218-e382a71b716b?auto=format&fit=crop&w=800&q=80',
+    'https://images.unsplash.com/photo-1537368910025-700350fe46c7?auto=format&fit=crop&w=800&q=80',
+  ],
 };
+
+const getCoupleDisplayName = (groomName: string, brideName: string) =>
+  `${groomName || 'Groom'} & ${brideName || 'Bride'}`;
 
 const AutoSlider = ({ photos }: { photos: string[] }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -212,7 +200,7 @@ const PreviewImage = ({ file }: { file: File }) => {
   return <img src={url} alt="preview" className="w-full h-full object-cover" />;
 };
 
-const FileUploadArea = ({ msg, onFiles, onSkip, onGenerate }: { msg: Message, onFiles: (files: FileList | null, step?: string) => void, onSkip: (step: string) => void, onGenerate: (step: string) => void }) => {
+const FileUploadArea = ({ msg, onFiles, onSkip }: { msg: Message, onFiles: (files: FileList | null, step?: string) => void, onSkip: (step: string) => void }) => {
   const [isDragging, setIsDragging] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
 
@@ -307,15 +295,6 @@ const FileUploadArea = ({ msg, onFiles, onSkip, onGenerate }: { msg: Message, on
             onChange={handleFileSelect}
           />
         </label>
-        {!msg.multiple && (
-          <button
-            onClick={() => onGenerate(msg.step!)}
-            className="bg-gray-900 text-white px-6 py-3 rounded-full font-bold cursor-pointer hover:opacity-90 transition-all hover:scale-105 active:scale-95 shadow-md flex items-center justify-center gap-2"
-          >
-            <Wand2 size={18} />
-            <span>Generate with AI</span>
-          </button>
-        )}
       </div>
       <button 
         onClick={() => onSkip(msg.step!)}
@@ -326,6 +305,12 @@ const FileUploadArea = ({ msg, onFiles, onSkip, onGenerate }: { msg: Message, on
     </div>
   );
 };
+
+const WhatsAppIcon = ({ className = 'w-5 h-5' }: { className?: string }) => (
+  <svg className={className} fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z" />
+  </svg>
+);
 
 const MusicPlayer = ({ url, name, isViewMode, isPublished, hasRsvps }: { url: string, name: string, isViewMode: boolean, isPublished: boolean, hasRsvps: boolean }) => {
   const [isPlaying, setIsPlaying] = useState(false);
@@ -615,10 +600,10 @@ export default function App() {
         step: 'occasion'
       }]);
 
-      // Next step: Ask for Bride's name
+      // Next step: Ask for Groom's name first
       setTimeout(() => {
-        addBotMessage(<span>Great! What is the <span className="font-bold text-[#d98a8a]">Bride's</span> name?</span>);
-        addBotInput('text', 'e.g. Anjali', 'brideName');
+        addBotMessage(<span>Great! What is the <span className="font-bold text-[#d98a8a]">Groom's</span> name?</span>);
+        addBotInput('text', 'e.g. Rahul', 'groomName');
       }, 1000);
     } else if (option.id === 'upload_music') {
       setMessages(prev => [...prev.filter(m => m.type !== 'options'), {
@@ -682,22 +667,22 @@ export default function App() {
   };
 
   const proceedToNextStep = (step: string) => {
-    if (step === 'brideName') {
+    if (step === 'groomName') {
       setTimeout(() => {
-        addBotMessage(<span>And what is the <span className="font-bold text-[#d98a8a]">Groom's</span> name?</span>);
-        addBotInput('text', 'e.g. Rahul', 'groomName');
+        addBotMessage(<span>And what is the <span className="font-bold text-[#d98a8a]">Bride's</span> name?</span>);
+        addBotInput('text', 'e.g. Anjali', 'brideName');
       }, 1000);
-    } else if (step === 'groomName') {
-      setTimeout(() => {
-        addBotMessage("What are the Bride's parents' names?");
-        addBotInput('text', 'e.g. Mr. & Mrs. Sharma', 'brideParents');
-      }, 1000);
-    } else if (step === 'brideParents') {
+    } else if (step === 'brideName') {
       setTimeout(() => {
         addBotMessage("What are the Groom's parents' names?");
         addBotInput('text', 'e.g. Mr. & Mrs. Verma', 'groomParents');
       }, 1000);
     } else if (step === 'groomParents') {
+      setTimeout(() => {
+        addBotMessage("What are the Bride's parents' names?");
+        addBotInput('text', 'e.g. Mr. & Mrs. Sharma', 'brideParents');
+      }, 1000);
+    } else if (step === 'brideParents') {
       setTimeout(() => {
         addBotMessage("When is the big day?");
         addBotInput('date', '', 'date');
@@ -721,20 +706,20 @@ export default function App() {
       }, 1000);
     } else if (step === 'schedule') {
       setTimeout(() => {
-        addBotMessage("Awesome! Let's set up a beautiful banner for your website. You can upload one or generate a custom one using AI.");
+        addBotMessage("Awesome! Let's set up a beautiful banner for your website. Please upload one.");
         addBotUpload('bannerImage');
       }, 1000);
     } else if (step === 'bannerImage') {
       setTimeout(() => {
-        addBotMessage("Awesome! Now, please upload a beautiful picture of the Bride.");
-        addBotUpload('bridePhoto');
-      }, 1500);
-    } else if (step === 'bridePhoto') {
-      setTimeout(() => {
-        addBotMessage("Lovely! Now, please upload a handsome picture of the Groom.");
+        addBotMessage("Awesome! Now, please upload a handsome picture of the Groom.");
         addBotUpload('groomPhoto');
       }, 1500);
     } else if (step === 'groomPhoto') {
+      setTimeout(() => {
+        addBotMessage("Lovely! Now, please upload a beautiful picture of the Bride.");
+        addBotUpload('bridePhoto');
+      }, 1500);
+    } else if (step === 'bridePhoto') {
       setTimeout(() => {
         addBotMessage("Great! Finally, upload a few more pictures of the couple (up to 4 photos) for the gallery.");
         addBotUpload('galleryPhotos', true);
@@ -775,44 +760,32 @@ export default function App() {
   };
 
   const handleSkip = (step: string) => {
-    const actualStep = step.replace('generate_', '');
-    
     // Add user message indicating skip
     setMessages(prev => [...prev.filter(m => m.type !== 'input' && m.type !== 'upload'), {
       id: Date.now().toString(),
       sender: 'user',
       type: 'text',
       content: 'Skip',
-      step: actualStep
+      step
     }]);
     setInputValue('');
     setShowLocationSuggestions(false);
 
     // Add related image automatically if it's an image step
-    if (actualStep === 'bannerImage') {
-      setEventData(prev => ({ ...prev, bannerImage: 'https://images.unsplash.com/photo-1511285560929-80b456fea0bc?auto=format&fit=crop&w=1200&q=80' }));
-    } else if (actualStep === 'bridePhoto') {
-      setEventData(prev => ({ ...prev, bridePhoto: 'https://images.unsplash.com/photo-1546822452-97216656c07a?auto=format&fit=crop&w=400&q=80' }));
-    } else if (actualStep === 'groomPhoto') {
-      setEventData(prev => ({ ...prev, groomPhoto: 'https://images.unsplash.com/photo-1550005809-91ad75fb315f?auto=format&fit=crop&w=400&q=80' }));
-    } else if (actualStep === 'galleryPhotos') {
-      setEventData(prev => ({ ...prev, galleryPhotos: [
-        'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=800&q=80',
-        'https://images.unsplash.com/photo-1511285560929-80b456fea0bc?auto=format&fit=crop&w=800&q=80',
-        'https://images.unsplash.com/photo-1520854221256-17451cc331bf?auto=format&fit=crop&w=800&q=80',
-        'https://images.unsplash.com/photo-1532712938310-34cb3982ef74?auto=format&fit=crop&w=800&q=80'
-      ] }));
-    } else if (actualStep === 'memoriesPhotos') {
-      setEventData(prev => ({ ...prev, memoriesPhotos: [
-        'https://images.unsplash.com/photo-1522673607200-164d1b6ce486?auto=format&fit=crop&w=800&q=80',
-        'https://images.unsplash.com/photo-1515934751635-c81c6bc9a2d8?auto=format&fit=crop&w=800&q=80',
-        'https://images.unsplash.com/photo-1469334031218-e382a71b716b?auto=format&fit=crop&w=800&q=80',
-        'https://images.unsplash.com/photo-1537368910025-700350fe46c7?auto=format&fit=crop&w=800&q=80'
-      ] }));
+    if (step === 'bannerImage') {
+      setEventData(prev => ({ ...prev, bannerImage: DEFAULT_WEDDING_IMAGES.banner }));
+    } else if (step === 'groomPhoto') {
+      setEventData(prev => ({ ...prev, groomPhoto: DEFAULT_WEDDING_IMAGES.groom }));
+    } else if (step === 'bridePhoto') {
+      setEventData(prev => ({ ...prev, bridePhoto: DEFAULT_WEDDING_IMAGES.bride }));
+    } else if (step === 'galleryPhotos') {
+      setEventData(prev => ({ ...prev, galleryPhotos: DEFAULT_WEDDING_IMAGES.gallery }));
+    } else if (step === 'memoriesPhotos') {
+      setEventData(prev => ({ ...prev, memoriesPhotos: DEFAULT_WEDDING_IMAGES.memories }));
     }
 
     // Proceed to the next step
-    proceedToNextStep(actualStep);
+    proceedToNextStep(step);
   };
 
   const handleInputSubmit = (e: React.FormEvent) => {
@@ -821,11 +794,6 @@ export default function App() {
 
     const currentInputMsg = messages[messages.length - 1];
     const step = currentInputMsg.step;
-
-    if (inputValue.trim().toLowerCase() === 'skip' && step?.startsWith('generate_')) {
-      handleSkip(step);
-      return;
-    }
     
     // Add user message
     setMessages(prev => [...prev.filter(m => m.type !== 'input'), {
@@ -856,96 +824,10 @@ export default function App() {
       setEventData(prev => ({ ...prev, schedule: inputValue }));
     } else if (step === 'accommodations') {
       setEventData(prev => ({ ...prev, accommodations: inputValue }));
-    } else if (step === 'generate_bannerImage') {
-      handleGenerateImage(inputValue, 'bannerImage');
-      return;
-    } else if (step === 'generate_bridePhoto') {
-      handleGenerateImage(inputValue, 'bridePhoto');
-      return;
-    } else if (step === 'generate_groomPhoto') {
-      handleGenerateImage(inputValue, 'groomPhoto');
-      return;
     }
 
     if (step) {
       proceedToNextStep(step);
-    }
-  };
-
-  const handleGenerateImage = async (prompt: string, step: string) => {
-    const loadingId = Date.now().toString();
-    // Add bot message
-    setMessages(prev => [...prev, {
-      id: loadingId,
-      sender: 'bot',
-      type: 'text',
-      content: (
-        <div className="flex items-center gap-2">
-          <Wand2 className="animate-spin text-[#d98a8a]" size={18} />
-          <span>Generating your image... ✨</span>
-        </div>
-      )
-    }]);
-
-    try {
-      const ai = new GoogleGenAI({ apiKey: (import.meta as any).env.VITE_GEMINI_API_KEY || process.env.GEMINI_API_KEY });
-      const response = await ai.models.generateContent({
-        model: 'gemini-2.5-flash-image',
-        contents: {
-          parts: [
-            { text: prompt },
-          ],
-        },
-        config: {
-          imageConfig: {
-            aspectRatio: step === 'bannerImage' ? '16:9' : '1:1',
-          }
-        }
-      });
-
-      let imageUrl = '';
-      for (const part of response.candidates?.[0]?.content?.parts || []) {
-        if (part.inlineData) {
-          const base64EncodeString = part.inlineData.data;
-          const rawImageUrl = `data:${part.inlineData.mimeType || 'image/png'};base64,${base64EncodeString}`;
-          imageUrl = await compressBase64Image(rawImageUrl);
-          break;
-        }
-      }
-
-      if (!imageUrl) throw new Error('No image generated');
-
-      // Update state
-      if (step === 'bannerImage') {
-        setEventData(prev => ({ ...prev, bannerImage: imageUrl }));
-      } else if (step === 'bridePhoto') {
-        setEventData(prev => ({ ...prev, bridePhoto: imageUrl }));
-      } else if (step === 'groomPhoto') {
-        setEventData(prev => ({ ...prev, groomPhoto: imageUrl }));
-      }
-
-      // Remove loading message and add result
-      setMessages(prev => [...prev.filter(m => m.id !== loadingId), {
-        id: Date.now().toString(),
-        sender: 'bot',
-        type: 'text',
-        content: 'Here is your generated image!',
-        imageUrls: [imageUrl],
-        step: step
-      }]);
-
-      // Proceed to next step
-      proceedToNextStep(step);
-
-    } catch (error) {
-      console.error('Error generating image:', error);
-      setMessages(prev => [...prev.filter(m => m.id !== loadingId), {
-        id: Date.now().toString(),
-        sender: 'bot',
-        type: 'text',
-        content: "Sorry, I couldn't generate the image. Please try uploading one instead."
-      }]);
-      addBotUpload(step);
     }
   };
 
@@ -1046,6 +928,24 @@ export default function App() {
     }
   };
 
+  const getInviteShareUrl = () => {
+    if (inviteId) {
+      return `${window.location.origin}${window.location.pathname}?invite=${inviteId}`;
+    }
+    return window.location.href;
+  };
+
+  const getWhatsAppShareUrl = () => {
+    const shareUrl = getInviteShareUrl();
+    const coupleNames = eventData.groomName && eventData.brideName
+      ? getCoupleDisplayName(eventData.groomName, eventData.brideName)
+      : 'Our celebration';
+    const message = `You're invited to ${eventData.occasion || 'our special event'}! 🎉\n\n${coupleNames}\n\nView the invitation and RSVP here:\n${shareUrl}`;
+    return `https://wa.me/?text=${encodeURIComponent(message)}`;
+  };
+
+  const canShareInvite = Boolean(inviteId);
+
   const handleShareClick = async () => {
     setIsPublishing(true);
     try {
@@ -1130,6 +1030,13 @@ export default function App() {
   if (isLoading) {
     return <div className="min-h-screen flex items-center justify-center"><Wand2 className="animate-spin text-[#d98a8a]" size={32} /></div>;
   }
+
+  const previewBanner = eventData.bannerImage || DEFAULT_WEDDING_IMAGES.banner;
+  const previewGroomPhoto = eventData.groomPhoto || DEFAULT_WEDDING_IMAGES.groom;
+  const previewBridePhoto = eventData.bridePhoto || DEFAULT_WEDDING_IMAGES.bride;
+  const previewGalleryPhotos = eventData.galleryPhotos.length > 0 ? eventData.galleryPhotos : DEFAULT_WEDDING_IMAGES.gallery;
+  const previewMemoriesPhotos = eventData.memoriesPhotos.length > 0 ? eventData.memoriesPhotos : DEFAULT_WEDDING_IMAGES.memories;
+  const coupleDisplayName = getCoupleDisplayName(eventData.groomName, eventData.brideName);
 
   return (
     <div className="min-h-screen max-w-2xl mx-auto p-4 md:p-6 flex flex-col">
@@ -1281,11 +1188,6 @@ export default function App() {
                         msg={msg} 
                         onFiles={processFiles} 
                         onSkip={handleSkip} 
-                        onGenerate={(step) => {
-                          setMessages(prev => [...prev.filter(m => m.id !== msg.id)]);
-                          addBotMessage("What kind of image would you like to generate? (e.g. 'A beautiful floral banner with pink roses')");
-                          addBotInput('text', 'Describe the image...', `generate_${step}`);
-                        }} 
                       />
                     )}
 
@@ -1444,13 +1346,11 @@ export default function App() {
 
                 {/* Hero Section */}
                 <div className="relative h-[60vh] min-h-[400px] w-full bg-pink-50 flex items-center justify-center overflow-hidden">
-                  {(eventData.bannerImage || eventData.galleryPhotos[0]) && (
-                    <img 
-                      src={eventData.bannerImage || eventData.galleryPhotos[0]} 
-                      alt="Hero" 
-                      className="absolute inset-0 w-full h-full object-cover opacity-40 blur-[2px]"
-                    />
-                  )}
+                  <img 
+                    src={previewBanner} 
+                    alt="Hero" 
+                    className="absolute inset-0 w-full h-full object-cover opacity-40 blur-[2px]"
+                  />
                   <div className="absolute inset-0 bg-gradient-to-b from-white/40 to-white/80"></div>
                   
                   <div className="relative z-10 text-center p-6">
@@ -1471,7 +1371,7 @@ export default function App() {
                       transition={{ duration: 0.8, delay: 0.4 }}
                     >
                       <h1 className="text-5xl md:text-7xl font-bold font-serif mb-6 text-gray-800 drop-shadow-sm">
-                        {eventData.brideName || 'Bride'} & {eventData.groomName || 'Groom'}
+                        {coupleDisplayName}
                       </h1>
                     </motion.div>
                     <motion.div
@@ -1526,11 +1426,11 @@ export default function App() {
                       className="text-center flex-1"
                     >
                       <div className="w-56 h-56 mx-auto rounded-full overflow-hidden mb-6 border-4 border-pink-100 shadow-lg">
-                        <img src={eventData.bridePhoto || 'https://images.unsplash.com/photo-1546822452-97216656c07a?auto=format&fit=crop&w=400&q=80'} className="w-full h-full object-cover" alt="Bride" />
+                        <img src={previewGroomPhoto} className="w-full h-full object-cover" alt="Groom" />
                       </div>
-                      <h2 className="text-3xl font-serif font-bold text-gray-800 mb-2">{eventData.brideName || 'Bride'}</h2>
-                      <p className="text-gray-500 italic mb-1">Daughter of</p>
-                      <p className="text-gray-700 font-medium text-lg">{eventData.brideParents || "Bride's Parents"}</p>
+                      <h2 className="text-3xl font-serif font-bold text-gray-800 mb-2">{eventData.groomName || 'Groom'}</h2>
+                      <p className="text-gray-500 italic mb-1">Son of</p>
+                      <p className="text-gray-700 font-medium text-lg">{eventData.groomParents || "Groom's Parents"}</p>
                     </motion.div>
                     
                     <motion.div 
@@ -1551,18 +1451,17 @@ export default function App() {
                       className="text-center flex-1"
                     >
                       <div className="w-56 h-56 mx-auto rounded-full overflow-hidden mb-6 border-4 border-pink-100 shadow-lg">
-                        <img src={eventData.groomPhoto || 'https://images.unsplash.com/photo-1550005809-91ad75fb315f?auto=format&fit=crop&w=400&q=80'} className="w-full h-full object-cover" alt="Groom" />
+                        <img src={previewBridePhoto} className="w-full h-full object-cover" alt="Bride" />
                       </div>
-                      <h2 className="text-3xl font-serif font-bold text-gray-800 mb-2">{eventData.groomName || 'Groom'}</h2>
-                      <p className="text-gray-500 italic mb-1">Son of</p>
-                      <p className="text-gray-700 font-medium text-lg">{eventData.groomParents || "Groom's Parents"}</p>
+                      <h2 className="text-3xl font-serif font-bold text-gray-800 mb-2">{eventData.brideName || 'Bride'}</h2>
+                      <p className="text-gray-500 italic mb-1">Daughter of</p>
+                      <p className="text-gray-700 font-medium text-lg">{eventData.brideParents || "Bride's Parents"}</p>
                     </motion.div>
                   </div>
                 </div>
 
                 {/* Gallery Section */}
-                {eventData.galleryPhotos.length > 0 && (
-                  <div className="py-16 px-6 bg-pink-50/30 overflow-hidden">
+                <div className="py-16 px-6 bg-pink-50/30 overflow-hidden">
                     <motion.h2 
                       initial={{ opacity: 0, x: -30 }}
                       whileInView={{ opacity: 1, x: 0 }}
@@ -1573,7 +1472,7 @@ export default function App() {
                       Captured Moments
                     </motion.h2>
                     <div className="max-w-4xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-4">
-                      {eventData.galleryPhotos.map((url, i) => (
+                      {previewGalleryPhotos.map((url, i) => (
                         <motion.div 
                           key={i} 
                           initial={{ opacity: 0, y: 30 }}
@@ -1587,11 +1486,9 @@ export default function App() {
                       ))}
                     </div>
                   </div>
-                )}
 
                 {/* Memories Section */}
-                {eventData.memoriesPhotos && eventData.memoriesPhotos.length > 0 && (
-                  <div className="py-16 px-6 max-w-5xl mx-auto overflow-hidden">
+                <div className="py-16 px-6 max-w-5xl mx-auto overflow-hidden">
                     <motion.h2 
                       initial={{ opacity: 0, x: 30 }}
                       whileInView={{ opacity: 1, x: 0 }}
@@ -1607,10 +1504,9 @@ export default function App() {
                       viewport={{ once: true }}
                       transition={{ duration: 0.8, delay: 0.2 }}
                     >
-                      <AutoSlider photos={eventData.memoriesPhotos} />
+                      <AutoSlider photos={previewMemoriesPhotos} />
                     </motion.div>
                   </div>
-                )}
 
                 {/* Venue & Location Section */}
                 {eventData.location && (
@@ -1685,6 +1581,22 @@ export default function App() {
                     We are so excited to share this special {eventData.occasion.toLowerCase() || 'event'} with our favorite people. 
                     Please explore the website for more details about the event, travel information, and to RSVP.
                   </motion.p>
+
+                  {isViewMode && canShareInvite && (
+                    <motion.a
+                      href={getWhatsAppShareUrl()}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      initial={{ opacity: 0, y: 20 }}
+                      whileInView={{ opacity: 1, y: 0 }}
+                      viewport={{ once: true }}
+                      transition={{ duration: 0.6, delay: 0.3 }}
+                      className="inline-flex items-center gap-2 mt-8 bg-[#25D366] text-white px-8 py-3 rounded-full font-bold hover:bg-[#20bd5a] transition-colors shadow-md"
+                    >
+                      <WhatsAppIcon />
+                      <span>Share on WhatsApp</span>
+                    </motion.a>
+                  )}
 
                   <div className="max-w-4xl mx-auto mt-16 grid grid-cols-1 md:grid-cols-2 gap-8 text-left">
                     {((eventData.schedule && eventData.schedule.toLowerCase() !== 'skip') || !isViewMode) && (
@@ -1884,16 +1796,32 @@ export default function App() {
               </div>
             </div>
 
-            {/* Floating Map Button */}
-            {eventData.location && (
-              <button 
-                onClick={() => setShowMapModal(true)}
-                className={`absolute right-6 z-40 bg-white text-[#d98a8a] p-4 rounded-full shadow-lg hover:bg-gray-50 transition-colors flex items-center justify-center border border-gray-100 ${!isViewMode && (isPublished || rsvps.length > 0) ? 'bottom-28' : 'bottom-6'}`}
-                title="View Location"
-              >
-                <MapPin size={24} />
-              </button>
-            )}
+            {/* Floating Share & Map Buttons */}
+            {(canShareInvite && isViewMode) || eventData.location ? (
+              <div className={`absolute right-6 z-40 flex flex-col gap-3 ${!isViewMode && (isPublished || rsvps.length > 0) ? 'bottom-28' : 'bottom-6'}`}>
+                {canShareInvite && isViewMode && (
+                  <a
+                    href={getWhatsAppShareUrl()}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="bg-[#25D366] text-white p-4 rounded-full shadow-lg hover:bg-[#20bd5a] transition-colors flex items-center justify-center border border-[#20bd5a]"
+                    title="Share on WhatsApp"
+                    aria-label="Share on WhatsApp"
+                  >
+                    <WhatsAppIcon className="w-6 h-6" />
+                  </a>
+                )}
+                {eventData.location && (
+                  <button
+                    onClick={() => setShowMapModal(true)}
+                    className="bg-white text-[#d98a8a] p-4 rounded-full shadow-lg hover:bg-gray-50 transition-colors flex items-center justify-center border border-gray-100"
+                    title="View Location"
+                  >
+                    <MapPin size={24} />
+                  </button>
+                )}
+              </div>
+            ) : null}
 
             {/* Action Bar */}
             {!isViewMode && (
@@ -2151,26 +2079,40 @@ export default function App() {
               </div>
               <div className="p-6 bg-white space-y-4">
                 <div className="flex flex-col gap-3">
-                  <a
-                    href={`https://wa.me/?text=${encodeURIComponent(`We're celebrating our ${eventData.occasion || 'Special Event'}! 🎉 Join us on our special day. Check out our invitation and RSVP here: ${window.location.href}`)}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      const shareUrl = getInviteShareUrl();
+                      const shareData = {
+                        title: `${coupleDisplayName} — ${eventData.occasion || 'Invitation'}`,
+                        text: `You're invited! View our ${eventData.occasion || 'event'} invitation and RSVP.`,
+                        url: shareUrl,
+                      };
+                      if (navigator.share) {
+                        try {
+                          await navigator.share(shareData);
+                          return;
+                        } catch (error) {
+                          if ((error as Error).name === 'AbortError') return;
+                        }
+                      }
+                      await navigator.clipboard.writeText(shareUrl);
+                      alert('Invitation link copied to clipboard!');
+                    }}
                     className="w-full bg-gray-100 text-gray-800 py-4 rounded-xl font-bold hover:bg-gray-200 transition-colors shadow-sm flex items-center justify-center gap-3"
                   >
-                    <Share2 size={20} />
-                    <span>Share via Device</span>
-                  </a>
+                    <Copy size={20} />
+                    <span>Copy Link / Share</span>
+                  </button>
 
                   <a
-                    href={`https://wa.me/?text=${encodeURIComponent(`We're celebrating our ${eventData.occasion || 'Special Event'}! 🎉 Join us on our special day. Check out our invitation and RSVP here: ${window.location.href}`)}`}
+                    href={getWhatsAppShareUrl()}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="w-full bg-[#25D366] text-white py-4 rounded-xl font-bold hover:bg-[#20bd5a] transition-colors shadow-sm flex items-center justify-center gap-3"
                   >
-                    <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                      <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/>
-                    </svg>
-                    <span>WhatsApp</span>
+                    <WhatsAppIcon />
+                    <span>Share on WhatsApp</span>
                   </a>
                 </div>
               </div>
