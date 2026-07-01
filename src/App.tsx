@@ -368,7 +368,6 @@ export default function App() {
     time: '',
     location: '',
     schedule: '',
-    accommodations: '',
     bannerImage: '',
     bridePhoto: '',
     groomPhoto: '',
@@ -822,8 +821,6 @@ export default function App() {
       setEventData(prev => ({ ...prev, location: inputValue }));
     } else if (step === 'schedule') {
       setEventData(prev => ({ ...prev, schedule: inputValue }));
-    } else if (step === 'accommodations') {
-      setEventData(prev => ({ ...prev, accommodations: inputValue }));
     }
 
     if (step) {
@@ -1018,7 +1015,6 @@ export default function App() {
       else if (step === 'time') newData.time = value;
       else if (step === 'location') newData.location = value;
       else if (step === 'schedule') newData.schedule = value;
-      else if (step === 'accommodations') newData.accommodations = value;
       return newData;
     });
 
@@ -1598,11 +1594,11 @@ export default function App() {
                     </motion.a>
                   )}
 
-                  <div className="max-w-4xl mx-auto mt-16 grid grid-cols-1 md:grid-cols-2 gap-8 text-left">
+                  <div className="max-w-2xl mx-auto mt-16 text-left">
                     {((eventData.schedule && eventData.schedule.toLowerCase() !== 'skip') || !isViewMode) && (
                       <motion.div 
-                        initial={{ opacity: 0, x: -20 }}
-                        whileInView={{ opacity: 1, x: 0 }}
+                        initial={{ opacity: 0, y: 20 }}
+                        whileInView={{ opacity: 1, y: 0 }}
                         viewport={{ once: true }}
                         className="bg-white p-8 rounded-3xl shadow-sm border border-gray-100 relative group"
                       >
@@ -1619,31 +1615,6 @@ export default function App() {
                             <span className="italic opacity-50">No schedule added. Click the pencil icon to add one.</span>
                           ) : (
                             eventData.schedule
-                          )}
-                        </div>
-                      </motion.div>
-                    )}
-
-                    {((eventData.accommodations && eventData.accommodations.toLowerCase() !== 'skip') || !isViewMode) && (
-                      <motion.div 
-                        initial={{ opacity: 0, x: 20 }}
-                        whileInView={{ opacity: 1, x: 0 }}
-                        viewport={{ once: true }}
-                        className="bg-white p-8 rounded-3xl shadow-sm border border-gray-100 relative group"
-                      >
-                        {!isViewMode && (
-                          <button onClick={() => setEditingMessage({ id: 'accommodations', step: 'accommodations', value: (!eventData.accommodations || eventData.accommodations.toLowerCase() === 'skip') ? '' : eventData.accommodations })} className="absolute top-4 right-4 p-2 bg-white rounded-full shadow-md opacity-0 group-hover:opacity-100 transition-opacity text-gray-500 hover:text-gray-800">
-                            <Pencil size={16} />
-                          </button>
-                        )}
-                        <h3 className="text-2xl font-bold text-gray-800 mb-4 font-serif flex items-center gap-2">
-                          <MapPin className="text-[#d98a8a]" /> Accommodations
-                        </h3>
-                        <div className="text-gray-600 whitespace-pre-line leading-relaxed">
-                          {(!eventData.accommodations || eventData.accommodations.toLowerCase() === 'skip') ? (
-                            <span className="italic opacity-50">No accommodations added. Click the pencil icon to add one.</span>
-                          ) : (
-                            eventData.accommodations
                           )}
                         </div>
                       </motion.div>
@@ -2016,7 +1987,7 @@ export default function App() {
                 <label className="block text-sm font-bold text-gray-700 mb-2 capitalize">
                   {editingMessage.step.replace(/([A-Z])/g, ' $1').trim()}
                 </label>
-                {(editingMessage.step === 'schedule' || editingMessage.step === 'accommodations') ? (
+                {editingMessage.step === 'schedule' ? (
                   <textarea
                     value={editingMessage.value}
                     onChange={(e) => setEditingMessage({ ...editingMessage, value: e.target.value })}
