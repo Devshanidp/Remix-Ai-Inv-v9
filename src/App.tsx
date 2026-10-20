@@ -132,7 +132,7 @@ const compressImage = async (file: File, isMultiple: boolean = false): Promise<s
 const DEFAULT_WEDDING_IMAGES = {
   banner: 'https://images.unsplash.com/photo-1511285560929-80b456fea0bc?auto=format&fit=crop&w=1200&q=80',
   groom: 'https://images.unsplash.com/photo-1550005809-91ad75fb315f?auto=format&fit=crop&w=400&q=80',
-  bride: 'https://images.unsplash.com/photo-1546822452-97216656c07a?auto=format&fit=crop&w=400&q=80',
+  bride: 'https://images.unsplash.com/photo-1585241920473-b472eb9ffbae?auto=format&fit=crop&w=400&q=80',
   gallery: [
     'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=800&q=80',
     'https://images.unsplash.com/photo-1511285560929-80b456fea0bc?auto=format&fit=crop&w=800&q=80',
@@ -529,7 +529,9 @@ export default function App() {
   // Initial messages & Firebase Auth/Routing
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    const id = params.get('invite');
+    // Share links look like /i/<id>; older links use ?invite=<id>.
+    const pathMatch = window.location.pathname.match(/^\/i\/([A-Za-z0-9]+)\/?$/);
+    const id = pathMatch?.[1] || params.get('invite');
 
     if (id) {
       setIsViewMode(true);
@@ -1009,7 +1011,7 @@ export default function App() {
 
   const getInviteShareUrl = () => {
     if (inviteId) {
-      return `${window.location.origin}${window.location.pathname}?invite=${inviteId}`;
+      return `${window.location.origin}/i/${inviteId}`;
     }
     return window.location.href;
   };
@@ -1057,7 +1059,7 @@ export default function App() {
       setInviteId(finalId);
       setIsPublished(true);
       
-      const newUrl = `${window.location.origin}${window.location.pathname}?invite=${finalId}`;
+      const newUrl = `${window.location.origin}/i/${finalId}`;
       window.history.pushState({ path: newUrl }, '', newUrl);
       
       setShowShareModal(true);
