@@ -20,6 +20,7 @@ service cloud.firestore {
     //   - time: string (optional)
     //   - location: string (optional)
     //   - schedule: string (optional)
+    //   - menu: string (optional)
     //   - accommodations: string (optional)
     //   - bannerImage: string (optional)
     //   - bridePhoto: string (optional)
@@ -72,6 +73,7 @@ service cloud.firestore {
              isValidOptionalString('time', 0, 1000) &&
              isValidOptionalString('location', 0, 2000) &&
              isValidOptionalString('schedule', 0, 10000) &&
+             isValidOptionalString('menu', 0, 10000) &&
              isValidOptionalString('accommodations', 0, 10000) &&
              isValidOptionalString('bannerImage', 0, 10485760) &&
              isValidOptionalString('bridePhoto', 0, 10485760) &&

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Send, Image as ImageIcon, Upload, Eye, X, Check, MapPin, Calendar, Share2, Copy, Users, Wand2, Settings, Pencil, Music, Play, Pause } from 'lucide-react';
+import { Send, Image as ImageIcon, Upload, Eye, X, Check, MapPin, Calendar, Share2, Copy, Users, Wand2, Settings, Pencil, Music, Play, Pause, UtensilsCrossed } from 'lucide-react';
 import { db } from './firebase';
 import { doc, setDoc, getDoc, collection, addDoc, onSnapshot, updateDoc } from 'firebase/firestore';
 
@@ -306,6 +306,57 @@ const FileUploadArea = ({ msg, onFiles, onSkip }: { msg: Message, onFiles: (file
   );
 };
 
+// Turns "Starters: Paneer Tikka, Chicken 65; Desserts: Kheer" into courses with dishes.
+// Courses are split by new lines or ';'.
+const parseMenu = (menu: string) =>
+  menu
+    .split(/[\n;]/)
+    .map(line => line.trim())
+    .filter(Boolean)
+    .map(line => {
+      const idx = line.indexOf(':');
+      const course = idx > -1 ? line.slice(0, idx).trim() : '';
+      const rest = idx > -1 ? line.slice(idx + 1) : line;
+      const dishes = rest.split(',').map(d => d.trim()).filter(Boolean);
+      return { course, dishes };
+    });
+
+const BonAppetitMenu = ({ menu }: { menu: string }) => {
+  const courses = parseMenu(menu);
+  return (
+    <div className="relative bg-[#fffaf7] rounded-3xl border border-[#ead7cf] px-6 py-10 md:px-12 text-center overflow-hidden">
+      <div className="absolute inset-3 rounded-2xl border border-dashed border-[#e3c3b8] pointer-events-none" />
+      <UtensilsCrossed className="mx-auto text-[#d98a8a] mb-3" size={28} />
+      <p className="text-xs uppercase tracking-[0.35em] text-[#b98b7e] mb-2">The Wedding Feast</p>
+      <h3 className="text-4xl md:text-5xl font-serif italic text-gray-800 mb-2">Bon Appétit</h3>
+      <div className="flex items-center justify-center gap-3 mb-8 text-[#d98a8a]">
+        <span className="h-px w-12 bg-[#e3c3b8]" />
+        <span className="text-lg">❦</span>
+        <span className="h-px w-12 bg-[#e3c3b8]" />
+      </div>
+      <div className="space-y-7 relative">
+        {courses.map((c, i) => (
+          <motion.div
+            key={i}
+            initial={{ opacity: 0, y: 15 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.5, delay: i * 0.08 }}
+          >
+            {c.course && (
+              <h4 className="text-sm font-bold uppercase tracking-[0.25em] text-[#d98a8a] mb-2">{c.course}</h4>
+            )}
+            <p className="text-gray-700 text-lg font-serif leading-relaxed">
+              {c.dishes.join(' · ')}
+            </p>
+          </motion.div>
+        ))}
+      </div>
+      <p className="mt-10 text-sm italic text-gray-500">Prepared with love, served with joy</p>
+    </div>
+  );
+};
+
 const WhatsAppIcon = ({ className = 'w-5 h-5' }: { className?: string }) => (
   <svg className={className} fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
     <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z" />
@@ -368,6 +419,7 @@ export default function App() {
     time: '',
     location: '',
     schedule: '',
+    menu: '',
     bannerImage: '',
     bridePhoto: '',
     groomPhoto: '',
@@ -464,7 +516,7 @@ export default function App() {
           const docRef = doc(db, 'invitations', id);
           const docSnap = await getDoc(docRef);
           if (docSnap.exists()) {
-            setEventData(docSnap.data() as any);
+            setEventData(prev => ({ ...prev, ...(docSnap.data() as any) }));
             setShowPreview(true);
             setIsPublished(true);
           } else {
@@ -705,6 +757,11 @@ export default function App() {
       }, 1000);
     } else if (step === 'schedule') {
       setTimeout(() => {
+        addBotMessage("Bon appétit! 🍽️ What's on the menu? Separate courses with ';' (e.g. Welcome Drinks: Mojito, Fresh Lime; Main Course: Biryani, Butter Chicken). Or type 'Skip'");
+        addBotInput('text', 'e.g. Starters: Paneer Tikka; Desserts: Gulab Jamun', 'menu');
+      }, 1000);
+    } else if (step === 'menu') {
+      setTimeout(() => {
         addBotMessage("Awesome! Let's set up a beautiful banner for your website. Please upload one.");
         addBotUpload('bannerImage');
       }, 1000);
@@ -821,6 +878,8 @@ export default function App() {
       setEventData(prev => ({ ...prev, location: inputValue }));
     } else if (step === 'schedule') {
       setEventData(prev => ({ ...prev, schedule: inputValue }));
+    } else if (step === 'menu') {
+      setEventData(prev => ({ ...prev, menu: inputValue }));
     }
 
     if (step) {
@@ -1015,6 +1074,7 @@ export default function App() {
       else if (step === 'time') newData.time = value;
       else if (step === 'location') newData.location = value;
       else if (step === 'schedule') newData.schedule = value;
+      else if (step === 'menu') newData.menu = value;
       return newData;
     });
 
@@ -1619,8 +1679,34 @@ export default function App() {
                         </div>
                       </motion.div>
                     )}
+
+                    {/* Bon Appétit Menu Section */}
+                    {((eventData.menu && eventData.menu.toLowerCase() !== 'skip') || !isViewMode) && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        viewport={{ once: true }}
+                        className="mt-8 relative group"
+                      >
+                        {!isViewMode && (
+                          <button onClick={() => setEditingMessage({ id: 'menu', step: 'menu', value: (!eventData.menu || eventData.menu.toLowerCase() === 'skip') ? '' : eventData.menu })} className="absolute top-4 right-4 z-10 p-2 bg-white rounded-full shadow-md opacity-0 group-hover:opacity-100 transition-opacity text-gray-500 hover:text-gray-800">
+                            <Pencil size={16} />
+                          </button>
+                        )}
+                        {(!eventData.menu || eventData.menu.toLowerCase() === 'skip') ? (
+                          <div className="bg-white p-8 rounded-3xl shadow-sm border border-gray-100 text-center">
+                            <h3 className="text-2xl font-bold text-gray-800 mb-2 font-serif flex items-center justify-center gap-2">
+                              <UtensilsCrossed className="text-[#d98a8a]" /> Bon Appétit
+                            </h3>
+                            <span className="italic opacity-50 text-gray-600">No menu added. Click the pencil icon to add one.</span>
+                          </div>
+                        ) : (
+                          <BonAppetitMenu menu={eventData.menu} />
+                        )}
+                      </motion.div>
+                    )}
                   </div>
-                  
+
                   {/* RSVP Section */}
                   {rsvpState === 'idle' && (
                     <button 
@@ -1987,7 +2073,7 @@ export default function App() {
                 <label className="block text-sm font-bold text-gray-700 mb-2 capitalize">
                   {editingMessage.step.replace(/([A-Z])/g, ' $1').trim()}
                 </label>
-                {editingMessage.step === 'schedule' ? (
+                {(editingMessage.step === 'schedule' || editingMessage.step === 'menu') ? (
                   <textarea
                     value={editingMessage.value}
                     onChange={(e) => setEditingMessage({ ...editingMessage, value: e.target.value })}
