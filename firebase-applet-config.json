@@ -1,10 +1,10 @@
 {
-  "projectId": "gen-lang-client-0162562680",
-  "appId": "1:324097584792:web:d12610ae78e6f50722eaed",
-  "apiKey": "AIzaSyD3rDPlBIb4UbtulzpKxXQYRzuQWhBy1_A",
-  "authDomain": "gen-lang-client-0162562680.firebaseapp.com",
-  "firestoreDatabaseId": "ai-studio-da16dcbe-2adb-4e61-9387-057695078de6",
-  "storageBucket": "gen-lang-client-0162562680.firebasestorage.app",
-  "messagingSenderId": "324097584792",
+  "projectId": "bigdate-invites-29339",
+  "appId": "1:978658794456:web:19a06449f6761f8a6430ad",
+  "apiKey": "AIzaSyDHVGYWbh0BbogoAYFkc5lImF8cnfjGI64",
+  "authDomain": "bigdate-invites-29339.firebaseapp.com",
+  "storageBucket": "bigdate-invites-29339.firebasestorage.app",
+  "messagingSenderId": "978658794456",
+  "firestoreDatabaseId": "(default)",
   "measurementId": ""
 }
