@@ -92,7 +92,7 @@ const CountdownTimer = ({ targetDate, targetTime }: { targetDate: string, target
   );
 };
 
-const compressImage = async (file: File, isMultiple: boolean = false): Promise<string> => {
+const compressDecodable = async (file: File | Blob, isMultiple: boolean = false): Promise<string> => {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.readAsDataURL(file);
@@ -195,12 +195,16 @@ const PreviewImage = ({ file }: { file: File }) => {
     return () => URL.revokeObjectURL(objectUrl);
   }, [file]);
   
+  const [failed, setFailed] = useState(false);
+
   if (!url) return null;
-  
-  return <img src={url} alt="preview" className="w-full h-full object-cover" />;
+  // HEIC and other formats the browser can't show still upload (they get converted).
+  if (failed) return <ImageIcon size={20} className="text-gray-400" />;
+
+  return <img src={url} alt="preview" className="w-full h-full object-cover" onError={() => setFailed(true)} />;
 };
 
-const FileUploadArea = ({ msg, onFiles, onSkip }: { msg: Message, onFiles: (files: FileList | null, step?: string) => void, onSkip: (step: string) => void }) => {
+const FileUploadArea = ({ msg, onFiles, onSkip }: { msg: Message, onFiles: (files: FileList | File[] | null, step?: string) => Promise<void>, onSkip: (step: string) => void }) => {
   const [isDragging, setIsDragging] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
 
@@ -221,7 +225,7 @@ const FileUploadArea = ({ msg, onFiles, onSkip }: { msg: Message, onFiles: (file
       if (msg.multiple) {
         setSelectedFiles(prev => [...prev, ...Array.from(e.dataTransfer.files!)]);
       } else {
-        onFiles(e.dataTransfer.files, msg.step);
+        runUpload(Array.from(e.dataTransfer.files));
       }
     }
   };
@@ -231,17 +235,24 @@ const FileUploadArea = ({ msg, onFiles, onSkip }: { msg: Message, onFiles: (file
       if (msg.multiple) {
         setSelectedFiles(prev => [...prev, ...Array.from(e.target.files!)]);
       } else {
-        onFiles(e.target.files, msg.step);
+        runUpload(Array.from(e.target.files));
       }
     }
   };
 
-  const handleUploadClick = () => {
-    if (selectedFiles.length > 0) {
-      const dt = new DataTransfer();
-      selectedFiles.forEach(file => dt.items.add(file));
-      onFiles(dt.files, msg.step);
+  const [isUploading, setIsUploading] = useState(false);
+
+  const runUpload = async (files: FileList | File[]) => {
+    setIsUploading(true);
+    try {
+      await onFiles(files, msg.step);
+    } finally {
+      setIsUploading(false);
     }
+  };
+
+  const handleUploadClick = () => {
+    if (selectedFiles.length > 0 && !isUploading) runUpload(selectedFiles);
   };
 
   return (
@@ -258,6 +269,10 @@ const FileUploadArea = ({ msg, onFiles, onSkip }: { msg: Message, onFiles: (file
         {msg.multiple ? "Select multiple photos from your device, then click Upload." : "Drag & drop a high-quality photo, or click to upload."}
       </p>
       
+      {!msg.multiple && isUploading && (
+        <p className="text-sm font-bold text-[#d98a8a]">Uploading...</p>
+      )}
+
       {msg.multiple && selectedFiles.length > 0 && (
         <div className="flex flex-col items-center gap-2 w-full">
           <p className="text-sm font-bold text-[#d98a8a]">{selectedFiles.length} photos selected</p>
@@ -275,10 +290,11 @@ const FileUploadArea = ({ msg, onFiles, onSkip }: { msg: Message, onFiles: (file
           </div>
           <button 
             onClick={handleUploadClick}
-            className="bg-gray-900 text-white px-8 py-3 rounded-full font-bold cursor-pointer hover:opacity-90 transition-all hover:scale-105 active:scale-95 shadow-md flex items-center justify-center gap-2 w-full sm:w-auto"
+            disabled={isUploading}
+            className="bg-gray-900 text-white px-8 py-3 rounded-full font-bold cursor-pointer hover:opacity-90 transition-all hover:scale-105 active:scale-95 shadow-md flex items-center justify-center gap-2 w-full sm:w-auto disabled:opacity-60 disabled:cursor-wait"
           >
             <Upload size={18} />
-            <span>Upload {selectedFiles.length} Pictures</span>
+            <span>{isUploading ? 'Uploading...' : `Upload ${selectedFiles.length} Pictures`}</span>
           </button>
         </div>
       )}
@@ -305,6 +321,30 @@ const FileUploadArea = ({ msg, onFiles, onSkip }: { msg: Message, onFiles: (file
     </div>
   );
 };
+
+const isHeic = (f: File) => /image\/hei[cf]/i.test(f.type) || /\.hei[cf]$/i.test(f.name);
+
+// Resizes a photo to a JPEG data URL. iPhone HEIC photos can't be decoded by most
+// browsers, so they are converted first (the converter is only loaded when needed).
+const compressImage = async (file: File, isMultiple: boolean = false): Promise<string> => {
+  try {
+    return await compressDecodable(file, isMultiple);
+  } catch (err) {
+    if (!isHeic(file)) throw err;
+    const { default: heic2any } = await import('heic2any');
+    const out = await heic2any({ blob: file, toType: 'image/jpeg', quality: 0.8 });
+    return compressDecodable(Array.isArray(out) ? out[0] : out, isMultiple);
+  }
+};
+
+// Compresses several photos, skipping any that can't be read instead of failing them all.
+const compressMany = async (files: File[], limit: number) => {
+  const results = await Promise.allSettled(files.slice(0, limit).map(f => compressImage(f, true)));
+  const photos = results.flatMap(r => (r.status === 'fulfilled' ? [r.value] : []));
+  return { photos, failed: results.length - photos.length };
+};
+
+const UNREADABLE_PHOTO_MSG = "couldn't be read. Please use JPG or PNG photos.";
 
 // Turns "Starters: Paneer Tikka, Chicken 65; Desserts: Kheer" into courses with dishes.
 // Courses are split by new lines or ';'.
@@ -912,14 +952,17 @@ export default function App() {
     }
   };
 
-  const processFiles = async (files: FileList | null, step?: string) => {
+  const processFiles = async (files: FileList | File[] | null, step?: string) => {
     if (!files || files.length === 0) return;
 
     if (step === 'galleryPhotos' || step === 'memoriesPhotos') {
       const limit = step === 'galleryPhotos' ? 4 : 10;
-      const newPhotos = await Promise.all(
-        Array.from(files).slice(0, limit).map(f => compressImage(f as File, true))
-      );
+      const { photos: newPhotos, failed } = await compressMany(Array.from(files), limit);
+      if (newPhotos.length === 0) {
+        alert(`Sorry, ${failed === 1 ? 'that photo' : 'those photos'} ${UNREADABLE_PHOTO_MSG}`);
+        return;
+      }
+      if (failed > 0) alert(`${failed} photo${failed > 1 ? 's' : ''} ${UNREADABLE_PHOTO_MSG} The rest were uploaded.`);
       
       if (step === 'galleryPhotos') {
         setEventData(prev => ({ ...prev, galleryPhotos: newPhotos }));
@@ -941,8 +984,13 @@ export default function App() {
       }, 1500);
 
     } else {
-      const file = files[0];
-      const imageUrl = await compressImage(file);
+      let imageUrl: string;
+      try {
+        imageUrl = await compressImage(files[0]);
+      } catch {
+        alert(`Sorry, that photo ${UNREADABLE_PHOTO_MSG}`);
+        return;
+      }
       
       if (step === 'bannerImage') {
         setEventData(prev => ({ ...prev, bannerImage: imageUrl }));
@@ -975,9 +1023,12 @@ export default function App() {
 
     if (step === 'galleryPhotos' || step === 'memoriesPhotos') {
       const limit = step === 'galleryPhotos' ? 4 : 10;
-      const newPhotos = await Promise.all(
-        Array.from(files).slice(0, limit).map(f => compressImage(f as File, true))
-      );
+      const { photos: newPhotos, failed } = await compressMany(Array.from(files), limit);
+      if (newPhotos.length === 0) {
+        alert(`Sorry, ${failed === 1 ? 'that photo' : 'those photos'} ${UNREADABLE_PHOTO_MSG}`);
+        return;
+      }
+      if (failed > 0) alert(`${failed} photo${failed > 1 ? 's' : ''} ${UNREADABLE_PHOTO_MSG} The rest were uploaded.`);
       
       if (step === 'galleryPhotos') {
         setEventData(prev => ({ ...prev, galleryPhotos: newPhotos }));
@@ -992,7 +1043,13 @@ export default function App() {
       } : m));
 
     } else {
-      const imageUrl = await compressImage(files[0]);
+      let imageUrl: string;
+      try {
+        imageUrl = await compressImage(files[0]);
+      } catch {
+        alert(`Sorry, that photo ${UNREADABLE_PHOTO_MSG}`);
+        return;
+      }
       
       if (step === 'bannerImage') {
         setEventData(prev => ({ ...prev, bannerImage: imageUrl }));
