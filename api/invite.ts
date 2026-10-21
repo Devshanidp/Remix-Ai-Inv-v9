@@ -21,7 +21,7 @@ export default async function handler(req: Request) {
     const title = `${coupleName(invite)} — ${invite.occasion || 'Wedding'} Invitation`;
     const details = [formatWhen(invite), invite.location].filter(Boolean).join(' · ');
     const description = `${details ? details + '. ' : ''}Tap to view the invitation and RSVP.`;
-    const image = `${origin}/api/og?id=${id}`;
+    const image = `${origin}/api/og?id=${id}&v=2`; // bump v when the card design changes
     const pageUrl = `${origin}/i/${id}`;
 
     const tags = [
@@ -30,12 +30,12 @@ export default async function handler(req: Request) {
       `<meta property="og:title" content="${esc(title)}" />`,
       `<meta property="og:description" content="${esc(description)}" />`,
       `<meta property="og:image" content="${esc(image)}" />`,
-      `<meta property="og:image:width" content="800" />`,
-      `<meta property="og:image:height" content="420" />`,
+      `<meta property="og:image:width" content="540" />`,
+      `<meta property="og:image:height" content="540" />`,
       `<meta property="og:image:type" content="image/png" />`,
       `<meta property="og:url" content="${esc(pageUrl)}" />`,
       `<meta property="og:type" content="website" />`,
-      `<meta name="twitter:card" content="summary_large_image" />`,
+      `<meta name="twitter:card" content="summary" />`,
       `<meta name="twitter:title" content="${esc(title)}" />`,
       `<meta name="twitter:description" content="${esc(description)}" />`,
       `<meta name="twitter:image" content="${esc(image)}" />`,

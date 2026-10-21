@@ -1,20 +1,25 @@
-// GET /api/og?id=<inviteId> -> 800x420 preview image with the couple's photos and names.
+// GET /api/og?id=<inviteId> -> square "Save the Date" preview image with the couple's photos.
+// Square so WhatsApp's small square thumbnail shows the whole card instead of a cropped middle.
 import { ImageResponse } from '@vercel/og';
-import { getInvite, isValidId, coupleName, formatWhen, DEFAULT_GROOM, DEFAULT_BRIDE, type Invite } from './_invite';
+import { getInvite, isValidId, formatWhen, DEFAULT_GROOM, DEFAULT_BRIDE, type Invite } from './_invite';
 
 export const config = { runtime: 'edge' };
 
-const ROSE = '#d98a8a';
-// Rendered at 800x420 (2/3 of the usual 1200x630) to keep the PNG small enough for WhatsApp.
-const W = 800, H = 420, k = W / 1200;
+const ROSE = '#c97b7b';
+const INK = '#2b2b2b';
+// Laid out on a 600px grid, rendered at 540px so the PNG stays under WhatsApp's ~300KB preview limit.
+const SIZE = 540;
+const k = SIZE / 600;
 const px = (n: number) => Math.round(n * k);
+const PHOTO_W = px(236);
+const PHOTO_H = px(300);
 
 // Plain-object elements so this file needs no JSX setup.
 const h = (type: string, style: Record<string, unknown>, children?: unknown, extra: Record<string, unknown> = {}) =>
   ({ type, props: { style, children, ...extra } });
 
 // Photos are stored as data URLs; defaults are remote. Remote ones are fetched
-// up front so a dead link falls back to a plain circle instead of failing the image.
+// up front so a dead link falls back to a plain box instead of failing the image.
 async function loadPhoto(src: string, fallback: string): Promise<string | null> {
   const url = src || fallback;
   if (url.startsWith('data:image/')) return url;
@@ -31,31 +36,41 @@ async function loadPhoto(src: string, fallback: string): Promise<string | null> 
   }
 }
 
-const photo = (src: string | null, initial: string) =>
-  h('div', {
-    width: px(300), height: px(300), borderRadius: px(150), overflow: 'hidden', display: 'flex',
-    alignItems: 'center', justifyContent: 'center', border: `${px(10)}px solid white`,
-    boxShadow: '0 10px 30px rgba(0,0,0,0.15)', background: '#fbe3e3',
-  }, src
-    ? h('img', { width: px(300), height: px(300), objectFit: 'cover' }, undefined, { src, width: px(300), height: px(300) })
-    : h('div', { fontSize: px(120), color: ROSE }, initial));
+const truncate = (s: string, n: number) => (s.length > n ? s.slice(0, n - 1).trimEnd() + '…' : s);
+
+// One person: framed photo with their name and role underneath.
+const person = (src: string | null, name: string, role: string) =>
+  h('div', { display: 'flex', flexDirection: 'column', alignItems: 'center', width: PHOTO_W + px(12) }, [
+    h('div', {
+      width: PHOTO_W, height: PHOTO_H, display: 'flex', alignItems: 'center', justifyContent: 'center',
+      borderRadius: px(14), overflow: 'hidden', border: `${px(6)}px solid white`, background: '#f6dede',
+      boxShadow: '0 8px 22px rgba(0,0,0,0.18)',
+    }, src
+      ? h('img', { width: PHOTO_W, height: PHOTO_H, objectFit: 'cover' }, undefined, { src, width: PHOTO_W, height: PHOTO_H })
+      : h('div', { fontSize: px(110), color: ROSE }, name[0].toUpperCase())),
+    h('div', { fontSize: px(30), fontWeight: 700, color: INK, marginTop: px(12) }, truncate(name, 16)),
+    h('div', { fontSize: px(16), letterSpacing: px(3), color: ROSE, textTransform: 'uppercase', marginTop: px(2) }, role),
+  ]);
 
 function card(i: Invite, groom: string | null, bride: string | null) {
   const when = formatWhen(i);
+  const venue = i.location ? truncate(i.location.split(',').slice(0, 2).join(',').trim(), 44) : '';
   return h('div', {
-    width: '100%', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center',
-    justifyContent: 'center', background: 'linear-gradient(180deg, #fff7f5 0%, #fde8e8 100%)', fontFamily: 'sans-serif',
+    width: '100%', height: '100%', display: 'flex', padding: px(14),
+    background: 'linear-gradient(160deg, #fffaf6 0%, #fbe6e3 100%)', fontFamily: 'sans-serif',
+  }, h('div', {
+    flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+    border: '2px solid #e6c4bd', borderRadius: px(18),
   }, [
-    h('div', { fontSize: px(26), letterSpacing: px(8), color: ROSE, textTransform: 'uppercase', marginBottom: px(24) },
-      `${i.occasion || 'Wedding'} Invitation`),
-    h('div', { display: 'flex', alignItems: 'center', gap: px(36) }, [
-      photo(groom, (i.groomName || 'G')[0].toUpperCase()),
-      h('div', { fontSize: px(90), color: ROSE }, '&'),
-      photo(bride, (i.brideName || 'B')[0].toUpperCase()),
+    h('div', { fontSize: px(38), letterSpacing: px(8), color: ROSE, textTransform: 'uppercase', marginBottom: px(18) },
+      i.occasion && i.occasion.toLowerCase() !== 'wedding' ? truncate(i.occasion, 18) : 'Save the Date'),
+    h('div', { display: 'flex', alignItems: 'flex-start', gap: px(20) }, [
+      person(groom, i.groomName || 'Groom', 'Groom'),
+      person(bride, i.brideName || 'Bride', 'Bride'),
     ]),
-    h('div', { fontSize: px(60), fontWeight: 700, color: '#1f2937', marginTop: px(28) }, coupleName(i)),
-    when ? h('div', { fontSize: px(28), color: '#4b5563', marginTop: px(8) }, when) : null,
-  ].filter(Boolean));
+    when ? h('div', { fontSize: px(22), fontWeight: 700, color: INK, marginTop: px(16) }, when) : null,
+    venue ? h('div', { fontSize: px(18), color: '#5b5b5b', marginTop: px(4) }, venue) : null,
+  ].filter(Boolean)));
 }
 
 export default async function handler(req: Request) {
@@ -69,8 +84,8 @@ export default async function handler(req: Request) {
     loadPhoto(data.bridePhoto, DEFAULT_BRIDE),
   ]);
   return new ImageResponse(card(data, groom, bride) as any, {
-    width: W,
-    height: H,
+    width: SIZE,
+    height: SIZE,
     headers: { 'Cache-Control': 'public, max-age=300, s-maxage=3600, stale-while-revalidate=86400' },
   });
 }
