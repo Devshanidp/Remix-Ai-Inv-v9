@@ -6,10 +6,10 @@ import { EVENT_TYPES, TEMPLATES, TIERS, type EventType, type InviteTemplate, typ
 const TIER_ICONS: Record<Tier, React.ElementType> = { luxury: Crown, premium: Gem, standard: Star, basic: Sparkle };
 
 export const EventHome = ({ onSelect }: { onSelect: (event: EventType) => void }) => (
-  <div className="min-h-screen bg-[#f8f5fd]">
+  <div className="min-h-screen bg-[#fffafa]">
     <header className="max-w-6xl mx-auto px-4 pt-6">
-      <div className="bg-white rounded-full shadow-sm shadow-[#7c5cbf]/10 border border-[#ece5f8] px-6 py-3 flex items-center">
-        <span className="text-2xl font-bold tracking-tight text-[#7c5cbf] font-['Playfair_Display',serif]">
+      <div className="bg-white rounded-full shadow-sm shadow-[#c62828]/10 border border-[#fbe4e4] px-6 py-3 flex items-center">
+        <span className="text-2xl font-bold tracking-tight text-[#c62828] font-['Playfair_Display',serif]">
           Invitation
         </span>
       </div>
@@ -124,7 +124,7 @@ export const TemplatePicker = ({
       <p className="text-gray-500 mt-2 mb-6">A beautiful beginning to your {eventLabel.toLowerCase()}. Make it yours.</p>
 
       {/* Tier tabs */}
-      <div className="grid grid-cols-4 gap-1 md:gap-2 p-1.5 md:p-2 bg-[#ece5f8] rounded-2xl">
+      <div className="grid grid-cols-4 gap-1 md:gap-2 p-1.5 md:p-2 bg-[#fbe4e4] rounded-2xl">
         {TIERS.map(t => {
           const Icon = TIER_ICONS[t.id];
           const active = t.id === tier;
@@ -132,7 +132,7 @@ export const TemplatePicker = ({
             <button
               key={t.id}
               onClick={() => { setTier(t.id); setShowBenefits(false); }}
-              className={`flex flex-col md:flex-row items-center justify-center gap-1 md:gap-3 py-2.5 md:py-4 rounded-xl text-xs md:text-lg font-semibold transition-all ${active ? 'bg-white shadow-sm text-[#7c5cbf]' : 'text-gray-500 hover:text-gray-700'}`}
+              className={`flex flex-col md:flex-row items-center justify-center gap-1 md:gap-3 py-2.5 md:py-4 rounded-xl text-xs md:text-lg font-semibold transition-all ${active ? 'bg-white shadow-sm text-[#c62828]' : 'text-gray-500 hover:text-gray-700'}`}
             >
               <Icon size={20} />
               {t.label}
@@ -142,12 +142,12 @@ export const TemplatePicker = ({
       </div>
 
       {/* Tier details */}
-      <div className="border-b border-[#e6ddf6] py-5">
+      <div className="border-b border-[#f5d6d6] py-5">
         <button onClick={() => setShowBenefits(v => !v)} className="w-full flex items-center justify-between text-left">
           <span className="text-gray-700">{tierInfo.label} tier details</span>
           <span className="flex items-center gap-3 text-gray-500">
             <span className="hidden sm:inline">View benefits</span>
-            <span className={`w-9 h-9 rounded-full border border-gray-300 flex items-center justify-center text-[#7c5cbf] transition-transform ${showBenefits ? 'rotate-45' : ''}`}>
+            <span className={`w-9 h-9 rounded-full border border-gray-300 flex items-center justify-center text-[#c62828] transition-transform ${showBenefits ? 'rotate-45' : ''}`}>
               <Plus size={18} />
             </span>
           </span>
@@ -162,7 +162,7 @@ export const TemplatePicker = ({
             >
               {tierInfo.benefits.map(b => (
                 <li key={b} className="flex items-center gap-2 text-gray-600">
-                  <Check size={16} className="text-[#7c5cbf] shrink-0" /> {b}
+                  <Check size={16} className="text-[#c62828] shrink-0" /> {b}
                 </li>
               ))}
             </motion.ul>
@@ -174,7 +174,7 @@ export const TemplatePicker = ({
       <div className="flex items-center justify-between mt-8 mb-5">
         <h2 className="text-xl md:text-2xl font-semibold text-gray-800 flex items-center gap-3">
           {tierInfo.label} designs
-          <span className="text-sm font-medium bg-[#ece5f8] text-gray-600 px-2.5 py-1 rounded-lg">{designs.length}</span>
+          <span className="text-sm font-medium bg-[#fbe4e4] text-gray-600 px-2.5 py-1 rounded-lg">{designs.length}</span>
         </h2>
         <span className="hidden sm:inline text-gray-500">Choose a design to explore</span>
       </div>

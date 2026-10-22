@@ -6,14 +6,14 @@
   }
 
   body {
-    background-color: #f8f5fd;
+    background-color: #fffafa;
     color: #4a4a4a;
   }
 }
 
 /* Invitation theme. The chosen template overrides these on the invitation preview. */
 :root {
-  --accent: #8b6fc6;
-  --accent-dark: #7c5cbf;
-  --accent-soft: #efe8fb;
+  --accent: #d32f2f;
+  --accent-dark: #c62828;
+  --accent-soft: #fdecec;
 }
