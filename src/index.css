@@ -10,3 +10,10 @@
     color: #4a4a4a;
   }
 }
+
+/* Invitation theme. The chosen template overrides these on the invitation preview. */
+:root {
+  --accent: #d98a8a;
+  --accent-dark: #c87979;
+  --accent-soft: #fdf2f4;
+}

@@ -3,6 +3,8 @@ import { motion, AnimatePresence } from 'motion/react';
 import { Send, Image as ImageIcon, Upload, Eye, X, Check, MapPin, Calendar, Share2, Copy, Users, Wand2, Settings, Pencil, Music, Play, Pause, UtensilsCrossed } from 'lucide-react';
 import { db } from './firebase';
 import { doc, setDoc, getDoc, collection, addDoc, onSnapshot, updateDoc } from 'firebase/firestore';
+import { getTemplate, templateStyle, DEFAULT_TEMPLATE_ID, type EventType, type InviteTemplate } from './templates';
+import { EventHome, TemplatePicker } from './TemplateGallery';
 
 type MessageType = 'text' | 'options' | 'input' | 'upload' | 'preview_btn' | 'upload_audio';
 
@@ -82,7 +84,7 @@ const CountdownTimer = ({ targetDate, targetTime }: { targetDate: string, target
         { label: 'Secs', value: timeLeft.seconds }
       ].map((item, i) => (
         <div key={i} className="flex flex-col items-center">
-          <div className="w-16 h-16 md:w-20 md:h-20 bg-white rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.08)] border border-pink-50 flex items-center justify-center text-2xl md:text-3xl font-bold text-[#d98a8a] font-serif">
+          <div className="w-16 h-16 md:w-20 md:h-20 bg-white rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.08)] border border-[var(--accent-soft)] flex items-center justify-center text-2xl md:text-3xl font-bold text-[var(--accent)] font-serif">
             {item.value.toString().padStart(2, '0')}
           </div>
           <span className="text-[10px] md:text-xs font-bold text-gray-500 mt-3 uppercase tracking-[0.2em]">{item.label}</span>
@@ -260,9 +262,9 @@ const FileUploadArea = ({ msg, onFiles, onSkip }: { msg: Message, onFiles: (file
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
-      className={`bg-white p-6 rounded-3xl shadow-sm border-2 w-full mt-2 flex flex-col items-center justify-center gap-4 transition-colors ${isDragging ? 'border-[#d98a8a] bg-pink-50/50' : 'border-gray-50'}`}
+      className={`bg-white p-6 rounded-3xl shadow-sm border-2 w-full mt-2 flex flex-col items-center justify-center gap-4 transition-colors ${isDragging ? 'border-[var(--accent)] bg-[var(--accent-soft)]/50' : 'border-gray-50'}`}
     >
-      <div className={`w-16 h-16 rounded-full flex items-center justify-center transition-colors ${isDragging ? 'bg-[#d98a8a] text-white' : 'bg-pink-50 text-[#d98a8a]'}`}>
+      <div className={`w-16 h-16 rounded-full flex items-center justify-center transition-colors ${isDragging ? 'bg-[var(--accent)] text-white' : 'bg-[var(--accent-soft)] text-[var(--accent)]'}`}>
         <ImageIcon size={32} />
       </div>
       <p className="text-gray-600 font-medium text-center">
@@ -270,12 +272,12 @@ const FileUploadArea = ({ msg, onFiles, onSkip }: { msg: Message, onFiles: (file
       </p>
       
       {!msg.multiple && isUploading && (
-        <p className="text-sm font-bold text-[#d98a8a]">Uploading...</p>
+        <p className="text-sm font-bold text-[var(--accent)]">Uploading...</p>
       )}
 
       {msg.multiple && selectedFiles.length > 0 && (
         <div className="flex flex-col items-center gap-2 w-full">
-          <p className="text-sm font-bold text-[#d98a8a]">{selectedFiles.length} photos selected</p>
+          <p className="text-sm font-bold text-[var(--accent)]">{selectedFiles.length} photos selected</p>
           <div className="flex gap-2 flex-wrap justify-center mb-2">
             {selectedFiles.slice(0, 5).map((f, i) => (
               <div key={i} className="w-12 h-12 rounded-md bg-gray-100 flex items-center justify-center overflow-hidden">
@@ -300,7 +302,7 @@ const FileUploadArea = ({ msg, onFiles, onSkip }: { msg: Message, onFiles: (file
       )}
 
       <div className="flex flex-col sm:flex-row gap-3 w-full justify-center">
-        <label className="bg-[#d98a8a] text-white px-6 py-3 rounded-full font-bold cursor-pointer hover:opacity-90 transition-all hover:scale-105 active:scale-95 shadow-md flex items-center justify-center gap-2">
+        <label className="bg-[var(--accent)] text-white px-6 py-3 rounded-full font-bold cursor-pointer hover:opacity-90 transition-all hover:scale-105 active:scale-95 shadow-md flex items-center justify-center gap-2">
           <Upload size={18} />
           <span>{msg.multiple ? (selectedFiles.length > 0 ? 'Add More Images' : 'Select Images') : 'Select Image'}</span>
           <input 
@@ -366,10 +368,10 @@ const BonAppetitMenu = ({ menu }: { menu: string }) => {
   return (
     <div className="relative bg-[#fffaf7] rounded-3xl border border-[#ead7cf] px-6 py-10 md:px-12 text-center overflow-hidden">
       <div className="absolute inset-3 rounded-2xl border border-dashed border-[#e3c3b8] pointer-events-none" />
-      <UtensilsCrossed className="mx-auto text-[#d98a8a] mb-3" size={28} />
+      <UtensilsCrossed className="mx-auto text-[var(--accent)] mb-3" size={28} />
       <p className="text-xs uppercase tracking-[0.35em] text-[#b98b7e] mb-2">The Wedding Feast</p>
       <h3 className="text-4xl md:text-5xl font-serif italic text-gray-800 mb-2">Bon Appétit</h3>
-      <div className="flex items-center justify-center gap-3 mb-8 text-[#d98a8a]">
+      <div className="flex items-center justify-center gap-3 mb-8 text-[var(--accent)]">
         <span className="h-px w-12 bg-[#e3c3b8]" />
         <span className="text-lg">❦</span>
         <span className="h-px w-12 bg-[#e3c3b8]" />
@@ -384,7 +386,7 @@ const BonAppetitMenu = ({ menu }: { menu: string }) => {
             transition={{ duration: 0.5, delay: i * 0.08 }}
           >
             {c.course && (
-              <h4 className="text-sm font-bold uppercase tracking-[0.25em] text-[#d98a8a] mb-2">{c.course}</h4>
+              <h4 className="text-sm font-bold uppercase tracking-[0.25em] text-[var(--accent)] mb-2">{c.course}</h4>
             )}
             <p className="text-gray-700 text-lg font-serif leading-relaxed">
               {c.dishes.join(' · ')}
@@ -454,7 +456,7 @@ const MusicPlayer = ({ url, name, isViewMode, isPublished, hasRsvps }: { url: st
       <audio ref={audioRef} src={url} loop />
       <button 
         onClick={togglePlay}
-        className="w-10 h-10 bg-[#d98a8a] text-white rounded-full flex items-center justify-center hover:bg-[#c87979] transition-colors shadow-sm"
+        className="w-10 h-10 bg-[var(--accent)] text-white rounded-full flex items-center justify-center hover:bg-[var(--accent-dark)] transition-colors shadow-sm"
       >
         {isPlaying ? <Pause size={18} /> : <Play size={18} className="ml-1" />}
       </button>
@@ -489,8 +491,14 @@ export default function App() {
     galleryPhotos: [] as string[],
     memoriesPhotos: [] as string[],
     musicUrl: '',
-    musicName: ''
+    musicName: '',
+    templateId: ''
   });
+
+  // Start screens: pick an occasion, then a design, then the chat builds the rest.
+  const [screen, setScreen] = useState<'home' | 'templates' | 'chat'>('home');
+  const [selectedEvent, setSelectedEvent] = useState<EventType | null>(null);
+  const [showTemplatePicker, setShowTemplatePicker] = useState(false);
   
   // State for preview modal
   const [showPreview, setShowPreview] = useState(false);
@@ -598,57 +606,6 @@ export default function App() {
     }
 
     setIsLoading(false);
-
-    const initial: Message[] = [
-      {
-        id: '1',
-        sender: 'bot',
-        type: 'text',
-        content: (
-          <span>
-            Welcome to BigDate! I'm here to help you design your <span className="text-[#d98a8a] font-bold">Event Website</span> easily and quickly.
-          </span>
-        ),
-      },
-      {
-        id: '2',
-        sender: 'bot',
-        type: 'text',
-        content: (
-          <span>
-            Tell me your <span className="text-[#d98a8a] font-bold">Occasion</span>.
-          </span>
-        ),
-      },
-      {
-        id: '3',
-        sender: 'bot',
-        type: 'options',
-        options: [
-          { id: 'wedding', label: 'Wedding', image: 'https://images.unsplash.com/photo-1511285560929-80b456fea0bc?auto=format&fit=crop&w=400&q=80' },
-          { id: 'betrothal', label: 'Betrothal', image: 'https://images.unsplash.com/photo-1515934751635-c81c6bc9a2d8?auto=format&fit=crop&w=400&q=80' },
-          { id: 'haldi', label: 'Haldi', image: 'https://images.unsplash.com/photo-1583939003579-730e3918a45a?auto=format&fit=crop&w=400&q=80' },
-        ]
-      }
-    ];
-    
-    const timeouts: ReturnType<typeof setTimeout>[] = [];
-
-    // Stagger the initial messages slightly for a nice effect
-    initial.forEach((msg, index) => {
-      const timeout = setTimeout(() => {
-        setMessages(prev => {
-          // Prevent duplicates in StrictMode
-          if (prev.some(m => m.id === msg.id)) return prev;
-          return [...prev, msg];
-        });
-      }, index * 800);
-      timeouts.push(timeout);
-    });
-
-    return () => {
-      timeouts.forEach(clearTimeout);
-    };
   }, []);
 
   useEffect(() => {
@@ -671,6 +628,52 @@ export default function App() {
     });
     return () => unsubscribe();
   }, [inviteId]);
+
+  const startChat = (event: EventType, template: InviteTemplate) => {
+    setEventData(prev => ({ ...prev, occasion: event.label, templateId: template.id }));
+    setScreen('chat');
+    const initial: Message[] = [
+      {
+        id: 'welcome',
+        sender: 'bot',
+        type: 'text',
+        content: (
+          <span>
+            Welcome to BigDate! I'm here to help you design your <span className="text-[var(--accent)] font-bold">{event.label} Website</span> easily and quickly.
+          </span>
+        ),
+      },
+      {
+        id: 'design',
+        sender: 'bot',
+        type: 'text',
+        content: (
+          <span>
+            Lovely choice — you picked the <span className="text-[var(--accent)] font-bold">{template.name}</span> design. You can change it any time.
+          </span>
+        ),
+      },
+      {
+        id: 'ask-groom',
+        sender: 'bot',
+        type: 'text',
+        content: <span>Let's begin! What is the <span className="font-bold text-[var(--accent)]">Groom's</span> name?</span>,
+      },
+      {
+        id: 'input-groom',
+        sender: 'bot',
+        type: 'input',
+        inputType: 'text',
+        inputPlaceholder: 'e.g. Rahul',
+        step: 'groomName',
+      },
+    ];
+    initial.forEach((msg, index) => {
+      setTimeout(() => {
+        setMessages(prev => (prev.some(m => m.id === msg.id) ? prev : [...prev, msg]));
+      }, index * 700);
+    });
+  };
 
   const addBotMessage = (content: React.ReactNode) => {
     setMessages(prev => [...prev, {
@@ -703,25 +706,7 @@ export default function App() {
   };
 
   const handleOptionSelect = (option: Option) => {
-    if (option.id === 'wedding' || option.id === 'betrothal' || option.id === 'haldi') {
-      // Save occasion
-      setEventData(prev => ({ ...prev, occasion: option.label }));
-
-      // Add user message
-      setMessages(prev => [...prev.filter(m => m.type !== 'options'), {
-        id: Date.now().toString(),
-        sender: 'user',
-        type: 'text',
-        content: option.label,
-        step: 'occasion'
-      }]);
-
-      // Next step: Ask for Groom's name first
-      setTimeout(() => {
-        addBotMessage(<span>Great! What is the <span className="font-bold text-[#d98a8a]">Groom's</span> name?</span>);
-        addBotInput('text', 'e.g. Rahul', 'groomName');
-      }, 1000);
-    } else if (option.id === 'upload_music') {
+    if (option.id === 'upload_music') {
       setMessages(prev => [...prev.filter(m => m.type !== 'options'), {
         id: Date.now().toString(),
         sender: 'user',
@@ -785,7 +770,7 @@ export default function App() {
   const proceedToNextStep = (step: string) => {
     if (step === 'groomName') {
       setTimeout(() => {
-        addBotMessage(<span>And what is the <span className="font-bold text-[#d98a8a]">Bride's</span> name?</span>);
+        addBotMessage(<span>And what is the <span className="font-bold text-[var(--accent)]">Bride's</span> name?</span>);
         addBotInput('text', 'e.g. Anjali', 'brideName');
       }, 1000);
     } else if (step === 'brideName') {
@@ -894,7 +879,8 @@ export default function App() {
 
     // Add related image automatically if it's an image step
     if (step === 'bannerImage') {
-      setEventData(prev => ({ ...prev, bannerImage: DEFAULT_WEDDING_IMAGES.banner }));
+      // Leave it empty so the chosen design's own cover photo is used.
+      setEventData(prev => ({ ...prev, bannerImage: '' }));
     } else if (step === 'groomPhoto') {
       setEventData(prev => ({ ...prev, groomPhoto: DEFAULT_WEDDING_IMAGES.groom }));
     } else if (step === 'bridePhoto') {
@@ -1172,10 +1158,28 @@ export default function App() {
 
 
   if (isLoading) {
-    return <div className="min-h-screen flex items-center justify-center"><Wand2 className="animate-spin text-[#d98a8a]" size={32} /></div>;
+    return <div className="min-h-screen flex items-center justify-center"><Wand2 className="animate-spin text-[var(--accent)]" size={32} /></div>;
   }
 
-  const previewBanner = eventData.bannerImage || DEFAULT_WEDDING_IMAGES.banner;
+  if (!isViewMode && screen === 'home') {
+    return <EventHome onSelect={(ev) => { setSelectedEvent(ev); setScreen('templates'); }} />;
+  }
+  if (!isViewMode && screen === 'templates' && selectedEvent) {
+    return (
+      <div className="min-h-screen bg-[#faf7f5]">
+        <TemplatePicker
+          eventLabel={selectedEvent.label}
+          onBack={() => setScreen('home')}
+          backLabel="All occasions"
+          onSelect={(t) => startChat(selectedEvent, t)}
+        />
+      </div>
+    );
+  }
+
+  const activeTemplate = getTemplate(eventData.templateId || DEFAULT_TEMPLATE_ID);
+  const darkHero = activeTemplate.hero === 'dark';
+  const previewBanner = eventData.bannerImage || activeTemplate.image || DEFAULT_WEDDING_IMAGES.banner;
   const previewGroomPhoto = eventData.groomPhoto || DEFAULT_WEDDING_IMAGES.groom;
   const previewBridePhoto = eventData.bridePhoto || DEFAULT_WEDDING_IMAGES.bride;
   const previewGalleryPhotos = eventData.galleryPhotos.length > 0 ? eventData.galleryPhotos : DEFAULT_WEDDING_IMAGES.gallery;
@@ -1183,9 +1187,23 @@ export default function App() {
   const coupleDisplayName = getCoupleDisplayName(eventData.groomName, eventData.brideName);
 
   return (
-    <div className="min-h-screen max-w-2xl mx-auto p-4 md:p-6 flex flex-col">
+    <div className="min-h-screen max-w-2xl mx-auto p-4 md:p-6 flex flex-col" style={templateStyle(activeTemplate)}>
       {!isViewMode && (
         <div className="flex-1 pb-24">
+          <div className="sticky top-2 z-30 mb-6 flex justify-center">
+            <div className="bg-white/90 backdrop-blur rounded-full shadow-sm border border-gray-100 pl-2 pr-1.5 py-1.5 flex items-center gap-3 text-sm">
+              <img src={activeTemplate.image} alt="" className="w-8 h-8 rounded-full object-cover" />
+              <span className="text-gray-600">
+                {eventData.occasion || 'Event'} · <span className="font-bold text-gray-800">{activeTemplate.name}</span>
+              </span>
+              <button
+                onClick={() => setShowTemplatePicker(true)}
+                className="bg-[var(--accent-soft)] text-[var(--accent-dark)] font-bold px-3 py-1.5 rounded-full hover:brightness-95 transition"
+              >
+                Change design
+              </button>
+            </div>
+          </div>
           <AnimatePresence initial={false}>
           {messages.map((msg) => (
             <motion.div
@@ -1213,7 +1231,7 @@ export default function App() {
                               <img key={i} src={url} alt="Generated" className="w-48 h-32 object-cover rounded-xl shadow-sm" />
                             ))}
                             {msg.step && (
-                              <label className="absolute -top-3 -right-3 bg-white text-gray-600 p-2 rounded-full shadow-md cursor-pointer hover:text-[#d98a8a] transition-colors opacity-100 sm:opacity-0 sm:group-hover:opacity-100 z-10">
+                              <label className="absolute -top-3 -right-3 bg-white text-gray-600 p-2 rounded-full shadow-md cursor-pointer hover:text-[var(--accent)] transition-colors opacity-100 sm:opacity-0 sm:group-hover:opacity-100 z-10">
                                 <Pencil size={14} />
                                 <input 
                                   type="file" 
@@ -1237,7 +1255,7 @@ export default function App() {
                             <button 
                               key={opt.id}
                               onClick={() => handleOptionSelect(opt)}
-                              className="bg-[#d98a8a] rounded-2xl p-3 flex flex-col items-center justify-center gap-3 hover:opacity-90 transition-all hover:scale-105 active:scale-95 shadow-md overflow-hidden relative group"
+                              className="bg-[var(--accent)] rounded-2xl p-3 flex flex-col items-center justify-center gap-3 hover:opacity-90 transition-all hover:scale-105 active:scale-95 shadow-md overflow-hidden relative group"
                             >
                               <div className="w-full aspect-square rounded-xl overflow-hidden bg-white/20">
                                 {opt.image ? (
@@ -1284,7 +1302,7 @@ export default function App() {
                                   });
                                 }
                               }}
-                              className="text-gray-400 hover:text-[#d98a8a] p-2 transition-colors"
+                              className="text-gray-400 hover:text-[var(--accent)] p-2 transition-colors"
                               title="Use current location"
                             >
                               <MapPin size={18} />
@@ -1337,13 +1355,13 @@ export default function App() {
 
                     {msg.type === 'upload_audio' && (
                       <div className="bg-white p-6 rounded-3xl shadow-sm border-2 border-gray-50 w-full mt-2 flex flex-col items-center justify-center gap-4">
-                        <div className="w-16 h-16 rounded-full flex items-center justify-center bg-pink-50 text-[#d98a8a]">
+                        <div className="w-16 h-16 rounded-full flex items-center justify-center bg-[var(--accent-soft)] text-[var(--accent)]">
                           <Music size={32} />
                         </div>
                         <p className="text-gray-600 font-medium text-center">
                           Select an audio file (MP3, WAV)
                         </p>
-                        <label className="bg-[#d98a8a] text-white px-6 py-3 rounded-full font-bold cursor-pointer hover:opacity-90 transition-all hover:scale-105 active:scale-95 shadow-md flex items-center justify-center gap-2">
+                        <label className="bg-[var(--accent)] text-white px-6 py-3 rounded-full font-bold cursor-pointer hover:opacity-90 transition-all hover:scale-105 active:scale-95 shadow-md flex items-center justify-center gap-2">
                           <Upload size={18} />
                           <span>Select Audio</span>
                           <input 
@@ -1393,14 +1411,14 @@ export default function App() {
               )}
 
               {msg.sender === 'user' && (
-                <div className="bg-[#d98a8a] text-white px-6 py-4 rounded-3xl rounded-tr-sm shadow-sm max-w-[80%] font-medium text-[17px] leading-relaxed relative group">
+                <div className="bg-[var(--accent)] text-white px-6 py-4 rounded-3xl rounded-tr-sm shadow-sm max-w-[80%] font-medium text-[17px] leading-relaxed relative group">
                    {/* Little tail for user */}
-                   <div className="absolute top-0 -right-2 w-3 h-4 bg-[#d98a8a]" style={{ clipPath: 'polygon(0 0, 100% 0, 0 100%)' }}></div>
+                   <div className="absolute top-0 -right-2 w-3 h-4 bg-[var(--accent)]" style={{ clipPath: 'polygon(0 0, 100% 0, 0 100%)' }}></div>
                   {typeof msg.content === 'string' && msg.content.toLowerCase() === 'skip' ? <span className="italic text-white/80">Skipped</span> : msg.content}
                   
                   {msg.type === 'text' && msg.step && msg.step !== 'music' && (!msg.imageUrls || msg.imageUrls.length === 0) && typeof msg.content === 'string' && (
                     ['bannerImage', 'bridePhoto', 'groomPhoto', 'galleryPhotos', 'memoriesPhotos'].includes(msg.step) ? (
-                      <label className="absolute -top-3 -left-3 bg-white text-gray-600 p-2 rounded-full shadow-md cursor-pointer hover:text-[#d98a8a] transition-colors opacity-100 sm:opacity-0 sm:group-hover:opacity-100 z-10">
+                      <label className="absolute -top-3 -left-3 bg-white text-gray-600 p-2 rounded-full shadow-md cursor-pointer hover:text-[var(--accent)] transition-colors opacity-100 sm:opacity-0 sm:group-hover:opacity-100 z-10">
                         <Pencil size={14} />
                         <input 
                           type="file" 
@@ -1413,7 +1431,7 @@ export default function App() {
                     ) : (
                       <button 
                         onClick={() => setEditingMessage({ id: msg.id, step: msg.step!, value: (typeof msg.content === 'string' && msg.content.toLowerCase() === 'skip') ? '' : String(msg.content ?? '') })}
-                        className="absolute -top-3 -left-3 bg-white text-gray-600 p-2 rounded-full shadow-md cursor-pointer hover:text-[#d98a8a] transition-colors opacity-100 sm:opacity-0 sm:group-hover:opacity-100 z-10"
+                        className="absolute -top-3 -left-3 bg-white text-gray-600 p-2 rounded-full shadow-md cursor-pointer hover:text-[var(--accent)] transition-colors opacity-100 sm:opacity-0 sm:group-hover:opacity-100 z-10"
                       >
                         <Pencil size={14} />
                       </button>
@@ -1426,7 +1444,7 @@ export default function App() {
                         <img key={i} src={url} alt="Uploaded" className={`object-cover rounded-lg shadow-sm ${msg.imageUrls!.length > 1 ? 'w-20 h-20' : 'w-48 h-32'}`} />
                       ))}
                       {msg.step && (
-                        <label className="absolute -top-3 -left-3 bg-white text-gray-600 p-2 rounded-full shadow-md cursor-pointer hover:text-[#d98a8a] transition-colors opacity-100 sm:opacity-0 sm:group-hover:opacity-100 z-10">
+                        <label className="absolute -top-3 -left-3 bg-white text-gray-600 p-2 rounded-full shadow-md cursor-pointer hover:text-[var(--accent)] transition-colors opacity-100 sm:opacity-0 sm:group-hover:opacity-100 z-10">
                           <Pencil size={14} />
                           <input 
                             type="file" 
@@ -1489,22 +1507,22 @@ export default function App() {
                 )}
 
                 {/* Hero Section */}
-                <div className="relative h-[60vh] min-h-[400px] w-full bg-pink-50 flex items-center justify-center overflow-hidden">
+                <div className={`relative ${darkHero ? 'h-[75vh] min-h-[480px] bg-gray-900' : 'h-[60vh] min-h-[400px] bg-[var(--accent-soft)]'} w-full flex items-center justify-center overflow-hidden`}>
                   <img 
                     src={previewBanner} 
                     alt="Hero" 
-                    className="absolute inset-0 w-full h-full object-cover opacity-40 blur-[2px]"
+                    className={`absolute inset-0 w-full h-full object-cover ${darkHero ? '' : 'opacity-40 blur-[2px]'}`}
                   />
-                  <div className="absolute inset-0 bg-gradient-to-b from-white/40 to-white/80"></div>
+                  <div className={`absolute inset-0 ${darkHero ? 'bg-gradient-to-b from-black/20 via-black/40 to-black/75' : 'bg-gradient-to-b from-white/40 to-white/80'}`}></div>
                   
-                  <div className="relative z-10 text-center p-6">
+                  <div className={`relative z-10 text-center p-6 ${darkHero ? '[&_h1]:!text-white [&_h3]:!text-[var(--accent-soft)] [&_p]:!text-white/90 [&_a]:!text-white/90 [&_svg]:!text-[var(--accent-soft)]' : ''}`}>
                     <motion.div 
                       initial={{ opacity: 0, y: 30 }}
                       whileInView={{ opacity: 1, y: 0 }}
                       viewport={{ once: true }}
                       transition={{ duration: 0.8, delay: 0.2 }}
                     >
-                      <h3 className="text-xl md:text-2xl font-medium tracking-widest uppercase mb-4 text-[#d98a8a]">
+                      <h3 className="text-xl md:text-2xl font-medium tracking-widest uppercase mb-4 text-[var(--accent)]">
                         {eventData.occasion} Celebration
                       </h3>
                     </motion.div>
@@ -1523,7 +1541,7 @@ export default function App() {
                       whileInView={{ opacity: 1, width: 96 }}
                       viewport={{ once: true }}
                       transition={{ duration: 0.8, delay: 0.6 }}
-                      className="h-1 bg-[#d98a8a] mx-auto mb-6 rounded-full"
+                      className="h-1 bg-[var(--accent)] mx-auto mb-6 rounded-full"
                     ></motion.div>
                     <motion.div 
                       initial={{ opacity: 0, y: 20 }}
@@ -1533,7 +1551,7 @@ export default function App() {
                       className="flex flex-col items-center gap-3 text-gray-700"
                     >
                       <p className="text-xl md:text-2xl font-light tracking-wider flex items-center gap-2 text-center flex-wrap justify-center">
-                        <Calendar size={24} className="text-[#d98a8a]" />
+                        <Calendar size={24} className="text-[var(--accent)]" />
                         <span>
                           {eventData.date ? new Date(`${eventData.date}T00:00:00`).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) : 'Save the Date'}
                           {eventData.time && ` at ${new Date(`2000-01-01T${eventData.time}`).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}`}
@@ -1543,9 +1561,9 @@ export default function App() {
                         href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(eventData.location || '')}`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-lg font-medium flex items-center gap-2 hover:text-[#d98a8a] transition-colors"
+                        className="text-lg font-medium flex items-center gap-2 hover:text-[var(--accent)] transition-colors"
                       >
-                        <MapPin size={20} className="text-[#d98a8a]" />
+                        <MapPin size={20} className="text-[var(--accent)]" />
                         {eventData.location || 'Location TBD'}
                       </a>
                     </motion.div>
@@ -1569,7 +1587,7 @@ export default function App() {
                       transition={{ duration: 0.8 }}
                       className="text-center flex-1"
                     >
-                      <div className="w-56 h-56 mx-auto rounded-full overflow-hidden mb-6 border-4 border-pink-100 shadow-lg">
+                      <div className="w-56 h-56 mx-auto rounded-full overflow-hidden mb-6 border-4 border-[var(--accent-soft)] shadow-lg">
                         <img src={previewGroomPhoto} className="w-full h-full object-cover" alt="Groom" />
                       </div>
                       <h2 className="text-3xl font-serif font-bold text-gray-800 mb-2">{eventData.groomName || 'Groom'}</h2>
@@ -1582,7 +1600,7 @@ export default function App() {
                       whileInView={{ opacity: 0.5, scale: 1 }}
                       viewport={{ once: true }}
                       transition={{ duration: 0.5, delay: 0.4 }}
-                      className="text-5xl text-[#d98a8a] font-serif"
+                      className="text-5xl text-[var(--accent)] font-serif"
                     >
                       &
                     </motion.div>
@@ -1594,7 +1612,7 @@ export default function App() {
                       transition={{ duration: 0.8 }}
                       className="text-center flex-1"
                     >
-                      <div className="w-56 h-56 mx-auto rounded-full overflow-hidden mb-6 border-4 border-pink-100 shadow-lg">
+                      <div className="w-56 h-56 mx-auto rounded-full overflow-hidden mb-6 border-4 border-[var(--accent-soft)] shadow-lg">
                         <img src={previewBridePhoto} className="w-full h-full object-cover" alt="Bride" />
                       </div>
                       <h2 className="text-3xl font-serif font-bold text-gray-800 mb-2">{eventData.brideName || 'Bride'}</h2>
@@ -1605,7 +1623,7 @@ export default function App() {
                 </div>
 
                 {/* Gallery Section */}
-                <div className="py-16 px-6 bg-pink-50/30 overflow-hidden">
+                <div className="py-16 px-6 bg-[var(--accent-soft)]/50 overflow-hidden">
                     <motion.h2 
                       initial={{ opacity: 0, x: -30 }}
                       whileInView={{ opacity: 1, x: 0 }}
@@ -1695,7 +1713,7 @@ export default function App() {
                         href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(eventData.location)}`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex items-center gap-2 bg-[#d98a8a] text-white px-8 py-3 rounded-full font-bold hover:bg-[#c87979] transition-colors shadow-md mt-4"
+                        className="inline-flex items-center gap-2 bg-[var(--accent)] text-white px-8 py-3 rounded-full font-bold hover:bg-[var(--accent-dark)] transition-colors shadow-md mt-4"
                       >
                         <MapPin size={18} />
                         <span>Navigate Location</span>
@@ -1756,7 +1774,7 @@ export default function App() {
                           </button>
                         )}
                         <h3 className="text-2xl font-bold text-gray-800 mb-4 font-serif flex items-center gap-2">
-                          <Calendar className="text-[#d98a8a]" /> Schedule
+                          <Calendar className="text-[var(--accent)]" /> Schedule
                         </h3>
                         <div className="text-gray-600 whitespace-pre-line leading-relaxed">
                           {(!eventData.schedule || eventData.schedule.toLowerCase() === 'skip') ? (
@@ -1784,7 +1802,7 @@ export default function App() {
                         {(!eventData.menu || eventData.menu.toLowerCase() === 'skip') ? (
                           <div className="bg-white p-8 rounded-3xl shadow-sm border border-gray-100 text-center">
                             <h3 className="text-2xl font-bold text-gray-800 mb-2 font-serif flex items-center justify-center gap-2">
-                              <UtensilsCrossed className="text-[#d98a8a]" /> Bon Appétit
+                              <UtensilsCrossed className="text-[var(--accent)]" /> Bon Appétit
                             </h3>
                             <span className="italic opacity-50 text-gray-600">No menu added. Click the pencil icon to add one.</span>
                           </div>
@@ -1799,7 +1817,7 @@ export default function App() {
                   {rsvpState === 'idle' && (
                     <button 
                       onClick={() => setRsvpState('filling')}
-                      className="mt-10 bg-[#d98a8a] text-white px-10 py-4 rounded-full font-bold text-lg hover:bg-[#c87979] transition-colors shadow-md"
+                      className="mt-10 bg-[var(--accent)] text-white px-10 py-4 rounded-full font-bold text-lg hover:bg-[var(--accent-dark)] transition-colors shadow-md"
                     >
                       RSVP Now
                     </button>
@@ -1839,31 +1857,31 @@ export default function App() {
                             placeholder="e.g. Jane Doe"
                             value={rsvpForm.name} 
                             onChange={e => setRsvpForm({...rsvpForm, name: e.target.value})} 
-                            className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#d98a8a] focus:bg-white transition-all" 
+                            className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[var(--accent)] focus:bg-white transition-all" 
                           />
                         </div>
                         <div>
                           <label className="block text-sm font-semibold text-gray-700 mb-2">Will you attend?</label>
                           <div className="flex flex-col gap-3">
-                            <label className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all ${rsvpForm.attending === 'yes' ? 'border-[#d98a8a] bg-pink-50/50' : 'border-gray-200 hover:bg-gray-50'}`}>
+                            <label className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all ${rsvpForm.attending === 'yes' ? 'border-[var(--accent)] bg-[var(--accent-soft)]/50' : 'border-gray-200 hover:bg-gray-50'}`}>
                               <input 
                                 type="radio" 
                                 name="attending" 
                                 value="yes" 
                                 checked={rsvpForm.attending === 'yes'} 
                                 onChange={e => setRsvpForm({...rsvpForm, attending: e.target.value})} 
-                                className="w-4 h-4 text-[#d98a8a] focus:ring-[#d98a8a]" 
+                                className="w-4 h-4 text-[var(--accent)] focus:ring-[var(--accent)]" 
                               />
                               <span className="font-medium text-gray-700">Joyfully Accept</span>
                             </label>
-                            <label className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all ${rsvpForm.attending === 'no' ? 'border-[#d98a8a] bg-pink-50/50' : 'border-gray-200 hover:bg-gray-50'}`}>
+                            <label className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all ${rsvpForm.attending === 'no' ? 'border-[var(--accent)] bg-[var(--accent-soft)]/50' : 'border-gray-200 hover:bg-gray-50'}`}>
                               <input 
                                 type="radio" 
                                 name="attending" 
                                 value="no" 
                                 checked={rsvpForm.attending === 'no'} 
                                 onChange={e => setRsvpForm({...rsvpForm, attending: e.target.value})} 
-                                className="w-4 h-4 text-[#d98a8a] focus:ring-[#d98a8a]" 
+                                className="w-4 h-4 text-[var(--accent)] focus:ring-[var(--accent)]" 
                               />
                               <span className="font-medium text-gray-700">Regretfully Decline</span>
                             </label>
@@ -1880,7 +1898,7 @@ export default function App() {
                                 max="10" 
                                 value={rsvpForm.guests} 
                                 onChange={e => setRsvpForm({...rsvpForm, guests: parseInt(e.target.value) || 1})} 
-                                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#d98a8a] focus:bg-white transition-all" 
+                                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[var(--accent)] focus:bg-white transition-all" 
                               />
                             </div>
                             <div>
@@ -1889,14 +1907,14 @@ export default function App() {
                                 placeholder="e.g. Vegetarian, Gluten-free"
                                 value={rsvpForm.dietary} 
                                 onChange={e => setRsvpForm({...rsvpForm, dietary: e.target.value})} 
-                                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#d98a8a] focus:bg-white transition-all resize-none" 
+                                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[var(--accent)] focus:bg-white transition-all resize-none" 
                                 rows={2}
                               ></textarea>
                             </div>
                           </motion.div>
                         )}
                         
-                        <button type="submit" className="w-full bg-[#d98a8a] text-white px-6 py-4 rounded-xl font-bold text-lg hover:bg-[#c87979] transition-colors shadow-sm mt-2">
+                        <button type="submit" className="w-full bg-[var(--accent)] text-white px-6 py-4 rounded-xl font-bold text-lg hover:bg-[var(--accent-dark)] transition-colors shadow-sm mt-2">
                           Send RSVP
                         </button>
                         <button 
@@ -1914,9 +1932,9 @@ export default function App() {
                     <motion.div 
                       initial={{ opacity: 0, scale: 0.95 }}
                       animate={{ opacity: 1, scale: 1 }}
-                      className="mt-10 max-w-md mx-auto bg-[#fdf8f8] text-gray-800 p-8 rounded-3xl border border-pink-100 shadow-sm"
+                      className="mt-10 max-w-md mx-auto bg-[#fdf8f8] text-gray-800 p-8 rounded-3xl border border-[var(--accent-soft)] shadow-sm"
                     >
-                      <div className="w-16 h-16 bg-[#d98a8a] text-white rounded-full flex items-center justify-center mx-auto mb-4">
+                      <div className="w-16 h-16 bg-[var(--accent)] text-white rounded-full flex items-center justify-center mx-auto mb-4">
                         <Check size={32} />
                       </div>
                       <h3 className="text-2xl font-bold mb-2">Thank you, {rsvpForm.name}!</h3>
@@ -1931,7 +1949,7 @@ export default function App() {
                           setRsvpState('idle'); 
                           setRsvpForm({ name: '', attending: 'yes', guests: 1, dietary: '' }); 
                         }} 
-                        className="text-sm font-bold text-[#d98a8a] hover:text-[#c87979] transition-colors"
+                        className="text-sm font-bold text-[var(--accent)] hover:text-[var(--accent-dark)] transition-colors"
                       >
                         Submit another response
                       </button>
@@ -1959,7 +1977,7 @@ export default function App() {
                 {eventData.location && (
                   <button
                     onClick={() => setShowMapModal(true)}
-                    className="bg-white text-[#d98a8a] p-4 rounded-full shadow-lg hover:bg-gray-50 transition-colors flex items-center justify-center border border-gray-100"
+                    className="bg-white text-[var(--accent)] p-4 rounded-full shadow-lg hover:bg-gray-50 transition-colors flex items-center justify-center border border-gray-100"
                     title="View Location"
                   >
                     <MapPin size={24} />
@@ -1975,7 +1993,7 @@ export default function App() {
                   {rsvps.length > 0 && (
                     <button 
                       onClick={() => setShowGuestList(true)}
-                      className="bg-pink-50 text-[#d98a8a] px-5 py-3 rounded-full font-bold hover:bg-pink-100 transition-colors flex items-center gap-2"
+                      className="bg-[var(--accent-soft)] text-[var(--accent)] px-5 py-3 rounded-full font-bold hover:bg-pink-100 transition-colors flex items-center gap-2"
                     >
                       <Users size={20} />
                       <span className="hidden sm:inline">Guest List ({rsvps.length})</span>
@@ -1984,6 +2002,13 @@ export default function App() {
                 </div>
                 
                 <div className="flex items-center gap-3">
+                  <button
+                    onClick={() => setShowTemplatePicker(true)}
+                    className="bg-[var(--accent-soft)] text-[var(--accent-dark)] px-5 py-3 rounded-full font-bold hover:brightness-95 transition flex items-center gap-2"
+                  >
+                    <Wand2 size={20} />
+                    <span className="hidden sm:inline">Design</span>
+                  </button>
                   <button
                     onClick={handleShareClick}
                     disabled={isPublishing}
@@ -2037,7 +2062,7 @@ export default function App() {
                           href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(eventData.location)}`}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="inline-flex items-center gap-2 bg-[#d98a8a] text-white px-8 py-3 rounded-full font-bold hover:bg-[#c87979] transition-colors shadow-md"
+                          className="inline-flex items-center gap-2 bg-[var(--accent)] text-white px-8 py-3 rounded-full font-bold hover:bg-[var(--accent-dark)] transition-colors shadow-md"
                         >
                           <MapPin size={18} />
                           Open in Google Maps
@@ -2165,7 +2190,7 @@ export default function App() {
                   <textarea
                     value={editingMessage.value}
                     onChange={(e) => setEditingMessage({ ...editingMessage, value: e.target.value })}
-                    className="w-full bg-gray-50 border border-gray-200 text-gray-800 px-4 py-3 rounded-xl outline-none focus:ring-2 focus:ring-[#d98a8a] transition-all min-h-[120px]"
+                    className="w-full bg-gray-50 border border-gray-200 text-gray-800 px-4 py-3 rounded-xl outline-none focus:ring-2 focus:ring-[var(--accent)] transition-all min-h-[120px]"
                     autoFocus
                   />
                 ) : (
@@ -2173,7 +2198,7 @@ export default function App() {
                     type={editingMessage.step === 'date' ? 'date' : editingMessage.step === 'time' ? 'time' : 'text'}
                     value={editingMessage.value}
                     onChange={(e) => setEditingMessage({ ...editingMessage, value: e.target.value })}
-                    className="w-full bg-gray-50 border border-gray-200 text-gray-800 px-4 py-3 rounded-xl outline-none focus:ring-2 focus:ring-[#d98a8a] transition-all"
+                    className="w-full bg-gray-50 border border-gray-200 text-gray-800 px-4 py-3 rounded-xl outline-none focus:ring-2 focus:ring-[var(--accent)] transition-all"
                     autoFocus
                   />
                 )}
@@ -2188,7 +2213,7 @@ export default function App() {
                 </button>
                 <button 
                   onClick={handleEditSave}
-                  className="bg-[#d98a8a] text-white px-6 py-3 rounded-full font-bold hover:bg-[#c87979] transition-colors shadow-md"
+                  className="bg-[var(--accent)] text-white px-6 py-3 rounded-full font-bold hover:bg-[var(--accent-dark)] transition-colors shadow-md"
                 >
                   Save Changes
                 </button>
@@ -2265,6 +2290,29 @@ export default function App() {
                 </div>
               </div>
             </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Change Design Modal */}
+      <AnimatePresence>
+        {showTemplatePicker && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[80] bg-[#faf7f5] overflow-y-auto"
+          >
+            <TemplatePicker
+              eventLabel={eventData.occasion || 'Event'}
+              selectedId={activeTemplate.id}
+              onBack={() => setShowTemplatePicker(false)}
+              backLabel="Done"
+              onSelect={(t) => {
+                setEventData(prev => ({ ...prev, templateId: t.id }));
+                setShowTemplatePicker(false);
+              }}
+            />
           </motion.div>
         )}
       </AnimatePresence>

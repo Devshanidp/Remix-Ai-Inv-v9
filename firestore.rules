@@ -29,6 +29,7 @@ service cloud.firestore {
     //   - memoriesPhotos: list of strings (optional)
     //   - musicUrl: string (optional)
     //   - musicName: string (optional)
+    //   - templateId: string (optional) - chosen invitation design
     //   - createdAt: number (required, immutable)
     //
     // Collection: invitations/{inviteId}/rsvps
@@ -80,6 +81,7 @@ service cloud.firestore {
              isValidOptionalString('groomPhoto', 0, 10485760) &&
              isValidOptionalString('musicUrl', 0, 10485760) &&
              isValidOptionalString('musicName', 0, 1000) &&
+             isValidOptionalString('templateId', 0, 100) &&
              (!('galleryPhotos' in data) || (data.galleryPhotos is list && data.galleryPhotos.size() <= 50)) &&
              (!('memoriesPhotos' in data) || (data.memoriesPhotos is list && data.memoriesPhotos.size() <= 50));
     }
