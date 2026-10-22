@@ -639,7 +639,7 @@ export default function App() {
         type: 'text',
         content: (
           <span>
-            Welcome to BigDate! I'm here to help you design your <span className="text-[var(--accent)] font-bold">{event.label} Website</span> easily and quickly.
+            Welcome to Invitation! I'm here to help you design your <span className="text-[var(--accent)] font-bold">{event.label} Website</span> easily and quickly.
           </span>
         ),
       },
@@ -1166,7 +1166,7 @@ export default function App() {
   }
   if (!isViewMode && screen === 'templates' && selectedEvent) {
     return (
-      <div className="min-h-screen bg-[#faf7f5]">
+      <div className="min-h-screen bg-[#f8f5fd]">
         <TemplatePicker
           eventLabel={selectedEvent.label}
           onBack={() => setScreen('home')}
@@ -1932,7 +1932,7 @@ export default function App() {
                     <motion.div 
                       initial={{ opacity: 0, scale: 0.95 }}
                       animate={{ opacity: 1, scale: 1 }}
-                      className="mt-10 max-w-md mx-auto bg-[#fdf8f8] text-gray-800 p-8 rounded-3xl border border-[var(--accent-soft)] shadow-sm"
+                      className="mt-10 max-w-md mx-auto bg-[var(--accent-soft)] text-gray-800 p-8 rounded-3xl border border-[var(--accent-soft)] shadow-sm"
                     >
                       <div className="w-16 h-16 bg-[var(--accent)] text-white rounded-full flex items-center justify-center mx-auto mb-4">
                         <Check size={32} />
@@ -2301,7 +2301,7 @@ export default function App() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[80] bg-[#faf7f5] overflow-y-auto"
+            className="fixed inset-0 z-[80] bg-[#f8f5fd] overflow-y-auto"
           >
             <TemplatePicker
               eventLabel={eventData.occasion || 'Event'}
