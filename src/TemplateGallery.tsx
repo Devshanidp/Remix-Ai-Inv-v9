@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { ArrowLeft, ArrowRight, Check, Crown, Gem, Plus, Sparkle, Star } from 'lucide-react';
 import { EVENT_TYPES, TEMPLATES, TIERS, type EventType, type InviteTemplate, type Tier } from './templates';
+import { FloralArch, sceneColors } from './GrandEntrance';
 
 const TIER_ICONS: Record<Tier, React.ElementType> = { luxury: Crown, premium: Gem, standard: Star, basic: Sparkle };
 
@@ -69,7 +70,20 @@ export const EventHome = ({ onSelect }: { onSelect: (event: EventType) => void }
 
 // Miniature mock of the invitation cover, drawn with the template's own colours and font.
 const TemplateThumb = ({ t }: { t: InviteTemplate }) =>
-  t.hero === 'dark' ? (
+  t.hero === 'card' ? (
+    <div className="relative aspect-[3/4] rounded-xl overflow-hidden" style={{ background: `linear-gradient(180deg, ${sceneColors(t).from}, ${sceneColors(t).to})` }}>
+      <img src={t.image} alt="" loading="lazy" className="absolute inset-0 w-full h-full object-cover opacity-20" />
+      <FloralArch template={t} />
+      <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-6 pt-6" style={{ color: t.accentDark, fontFamily: t.font }}>
+        <p className="text-lg md:text-xl uppercase leading-tight tracking-wider">Rahul</p>
+        <p className="text-sm" style={{ color: t.accent }}>&amp;</p>
+        <p className="text-lg md:text-xl uppercase leading-tight tracking-wider">Anjali</p>
+        <p className="text-[8px] tracking-[0.3em] uppercase mt-2 font-sans" style={{ color: t.accent }}>Wedding Date</p>
+        <p className="text-sm">12/12/26</p>
+      </div>
+      <span className="absolute top-2 left-2 text-[10px] font-bold font-sans bg-white/85 rounded-full px-2 py-0.5" style={{ color: t.accentDark }}>🎀 Curtain opening</span>
+    </div>
+  ) : t.hero === 'dark' ? (
     <div className="relative aspect-[3/4] rounded-xl overflow-hidden bg-gray-900">
       <img src={t.image} alt="" loading="lazy" className="absolute inset-0 w-full h-full object-cover" />
       <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-black/30 to-black/75" />

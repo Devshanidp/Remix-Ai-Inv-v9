@@ -13,8 +13,13 @@ export interface InviteTemplate {
   accentSoft: string;
   // Heading font for the invitation (any font loaded in index.html).
   font: string;
-  // 'dark' = full photo cover with light text; 'light' = soft faded cover.
-  hero: 'light' | 'dark';
+  // 'dark' = full photo cover with light text; 'light' = soft faded cover;
+  // 'card' = pastel invitation card inside a floral arch.
+  hero: 'light' | 'dark' | 'card';
+  // 'curtain' = guests tap a bow and satin curtains open before the invite shows.
+  entrance?: 'curtain';
+  // Colours for card / curtain designs.
+  scene?: { from: string; to: string; petal: string; rose: string };
 }
 
 export interface EventType {
@@ -45,7 +50,7 @@ export const TIERS: { id: Tier; label: string; benefits: string[] }[] = [
   {
     id: 'luxury',
     label: 'Luxury',
-    benefits: ['Cinematic full-photo cover', 'Gold & jewel-tone palettes', 'Regal display fonts', 'Music, gallery, RSVP & guest list'],
+    benefits: ['Curtain-opening entrance with floral arch', 'Cinematic full-photo cover', 'Gold & jewel-tone palettes', 'Regal display fonts', 'Music, gallery, RSVP & guest list'],
   },
   {
     id: 'premium',
@@ -75,6 +80,8 @@ const FONTS = {
 
 export const TEMPLATES: InviteTemplate[] = [
   // Luxury
+  { id: 'floral-curtain', name: 'Floral Curtain', tier: 'luxury', tagline: 'Tap the bow, curtains open', image: img('1469371670807-013ccf25f16a', 1200), accent: '#a5728a', accentDark: '#6b4458', accentSoft: '#f7ebf0', font: FONTS.cormorant, hero: 'card', entrance: 'curtain', scene: { from: '#f8ecf1', to: '#ecdae6', petal: '#f4d3de', rose: '#e6a5b9' } },
+  { id: 'lavender-curtain', name: 'Lavender Curtain', tier: 'luxury', tagline: 'Soft lilac curtain reveal', image: img('1513278974582-3e1b4a4fa21e', 1200), accent: '#8a72b0', accentDark: '#55457a', accentSoft: '#f1ebf8', font: FONTS.cormorant, hero: 'card', entrance: 'curtain', scene: { from: '#f3edf9', to: '#e3d8f0', petal: '#e2d5f2', rose: '#bfa8de' } },
   { id: 'royal-noir', name: 'Royal Noir', tier: 'luxury', tagline: 'Black-tie elegance', image: img('1606216794074-735e91aa2c92', 1200), accent: '#b8913a', accentDark: '#94722a', accentSoft: '#f6efdf', font: FONTS.cinzel, hero: 'dark' },
   { id: 'maharaja-gold', name: 'Maharaja Gold', tier: 'luxury', tagline: 'A palace celebration', image: img('1595407753234-0882f1e77954', 1200), accent: '#a8742a', accentDark: '#865a1e', accentSoft: '#f8eedd', font: FONTS.cormorant, hero: 'dark' },
   { id: 'midnight-veil', name: 'Midnight Veil', tier: 'luxury', tagline: 'Timeless black & white', image: img('1460978812857-470ed1c77af0', 1200), accent: '#3f3f46', accentDark: '#18181b', accentSoft: '#f1f1f2', font: FONTS.vibes, hero: 'dark' },

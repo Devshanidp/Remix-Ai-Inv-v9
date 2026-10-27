@@ -5,6 +5,7 @@ import { db } from './firebase';
 import { doc, setDoc, getDoc, collection, addDoc, onSnapshot, updateDoc } from 'firebase/firestore';
 import { getTemplate, templateStyle, DEFAULT_TEMPLATE_ID, type EventType, type InviteTemplate } from './templates';
 import { EventHome, TemplatePicker } from './TemplateGallery';
+import { GrandEntrance, InvitationCard } from './GrandEntrance';
 
 type MessageType = 'text' | 'options' | 'input' | 'upload' | 'preview_btn' | 'upload_audio';
 
@@ -444,16 +445,24 @@ const MusicPlayer = ({ url, name, isViewMode, isPublished, hasRsvps }: { url: st
   };
 
   useEffect(() => {
-    if (audioRef.current) {
-      audioRef.current.volume = 0.5;
-    }
-  }, []);
+    const audio = audioRef.current;
+    if (!audio) return;
+    audio.volume = 0.5;
+    const onPlay = () => setIsPlaying(true);
+    const onPause = () => setIsPlaying(false);
+    audio.addEventListener('play', onPlay);
+    audio.addEventListener('pause', onPause);
+    return () => {
+      audio.removeEventListener('play', onPlay);
+      audio.removeEventListener('pause', onPause);
+    };
+  }, [url]);
 
   if (!url) return null;
 
   return (
     <div className={`fixed left-6 z-50 bg-white p-3 rounded-full shadow-lg border border-gray-100 flex items-center gap-3 ${!isViewMode && (isPublished || hasRsvps) ? 'bottom-28' : 'bottom-6'}`}>
-      <audio ref={audioRef} src={url} loop />
+      <audio ref={audioRef} src={url} loop data-bg-music />
       <button 
         onClick={togglePlay}
         className="w-10 h-10 bg-[var(--accent)] text-white rounded-full flex items-center justify-center hover:bg-[var(--accent-dark)] transition-colors shadow-sm"
@@ -499,9 +508,15 @@ export default function App() {
   const [screen, setScreen] = useState<'home' | 'templates' | 'chat'>('home');
   const [selectedEvent, setSelectedEvent] = useState<EventType | null>(null);
   const [showTemplatePicker, setShowTemplatePicker] = useState(false);
+  // Curtain designs play their opening each time the invitation is shown.
+  const [entranceDone, setEntranceDone] = useState(false);
+
   
   // State for preview modal
   const [showPreview, setShowPreview] = useState(false);
+  useEffect(() => {
+    if (showPreview) setEntranceDone(false);
+  }, [showPreview]);
 
   // State for RSVP form inside preview
   const [rsvpState, setRsvpState] = useState<'idle' | 'filling' | 'submitted'>('idle');
@@ -1507,6 +1522,17 @@ export default function App() {
                 )}
 
                 {/* Hero Section */}
+                {activeTemplate.hero === 'card' ? (
+                  <InvitationCard
+                    template={activeTemplate}
+                    groomName={eventData.groomName}
+                    brideName={eventData.brideName}
+                    occasion={eventData.occasion}
+                    date={eventData.date}
+                    time={eventData.time}
+                    location={eventData.location}
+                  />
+                ) : (
                 <div className={`relative ${darkHero ? 'h-[75vh] min-h-[480px] bg-gray-900' : 'h-[60vh] min-h-[400px] bg-[var(--accent-soft)]'} w-full flex items-center justify-center overflow-hidden`}>
                   <img 
                     src={previewBanner} 
@@ -1569,6 +1595,7 @@ export default function App() {
                     </motion.div>
                   </div>
                 </div>
+                )}
 
                 {/* Countdown Section */}
                 {eventData.date && (
@@ -2291,6 +2318,21 @@ export default function App() {
               </div>
             </motion.div>
           </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Curtain opening for curtain designs */}
+      <AnimatePresence>
+        {showPreview && activeTemplate.entrance === 'curtain' && !entranceDone && (
+          <GrandEntrance
+            key="entrance"
+            template={activeTemplate}
+            onOpenStart={() => {
+              // Must run inside the tap so browsers allow sound.
+              document.querySelector<HTMLAudioElement>('audio[data-bg-music]')?.play().catch(() => {});
+            }}
+            onOpened={() => setEntranceDone(true)}
+          />
         )}
       </AnimatePresence>
 
