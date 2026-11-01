@@ -1,25 +1,44 @@
 <div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
+<img width="1200" height="475" alt="Remix AI Invitation banner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
 </div>
 
-# Remix AI Invitation
+# 💌 Remix AI Invitation
 
-Build and share beautiful wedding and event invitation websites.
+Create and share beautiful **wedding and event invitation websites** in minutes. Pick a template, add your details and photos, and share one link with every guest.
 
-## Run Locally
+## Features
 
-**Prerequisites:** Node.js
+- **Template gallery**: ready-made invitation designs to choose from
+- **Animated "grand entrance"** when guests open the invitation
+- **Photo uploads**, including iPhone HEIC photos (converted automatically)
+- **Shareable link** for each invitation, with rich link previews on WhatsApp and social media
+- **Cloud saving** with Firebase (Firestore)
+- **Android app** built with Capacitor
+- Smooth animations with Motion
 
-1. Install dependencies:
-   `npm install`
-2. Run the app:
-   `npm run dev`
+## Tech stack
+
+| Area | Tools |
+|---|---|
+| Frontend | React, TypeScript, Vite, Tailwind CSS, React Router |
+| Backend | Firebase (Firestore), Express API, Vercel serverless |
+| Mobile | Capacitor (Android) |
+| Other | Motion animations, @vercel/og previews, heic2any |
+
+## Run locally
+
+```bash
+npm install
+npm run dev
+```
 
 ## Deploy
-
-Production builds use Vite:
 
 ```bash
 npm run build
 vercel --prod
 ```
+
+## Author
+
+Built by **Shanid (devShan)**. [GitHub](https://github.com/Devshanidp)
