@@ -6,6 +6,10 @@
 
 Create and share beautiful **wedding and event invitation websites** in minutes. Pick a template, add your details and photos, and share one link with every guest.
 
+![Choose your occasion](docs/screenshot.png)
+
+**Portfolio:** [devshanidp.xyz](https://devshanidp.xyz/)
+
 ## Features
 
 - **Template gallery**: ready-made invitation designs to choose from
