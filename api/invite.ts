@@ -10,7 +10,7 @@ const esc = (s: string) =>
 export default async function handler(req: Request) {
   const url = new URL(req.url);
   // After the /i/:id rewrite the request may still carry the original path.
-  const id = url.searchParams.get('id') || url.pathname.match(/^\/i\/([A-Za-z0-9]+)/)?.[1] || null;
+  const id = url.searchParams.get('id') || url.pathname.match(/^\/i\/([A-Za-z0-9-]+)/)?.[1] || null;
   const origin = url.origin;
 
   const htmlRes = await fetch(`${origin}/index.html`);

@@ -9,7 +9,7 @@
         {
           "type": "query",
           "key": "invite",
-          "value": "(?<id>[A-Za-z0-9]+)"
+          "value": "(?<id>[A-Za-z0-9-]+)"
         }
       ],
       "destination": "/i/:id",

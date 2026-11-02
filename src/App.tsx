@@ -150,6 +150,36 @@ const DEFAULT_WEDDING_IMAGES = {
   ],
 };
 
+// Readable link names, e.g. "rahul-weds-anjali-wedding" or "rahul-and-anjali-haldi".
+const slugify = (text: string) =>
+  text.toLowerCase().normalize('NFKD').replace(/[̀-ͯ]/g, '')
+    .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 30).replace(/-+$/g, '');
+
+const buildInviteSlug = (data: { groomName: string; brideName: string; occasion: string }) => {
+  const groom = slugify(data.groomName);
+  const bride = slugify(data.brideName);
+  const occasion = slugify(data.occasion) || 'invitation';
+  const joiner = occasion === 'wedding' ? 'weds' : 'and';
+  const names = groom && bride ? `${groom}-${joiner}-${bride}` : groom || bride;
+  return names ? `${names}-${occasion}` : '';
+};
+
+// Uses the readable name if it's free, otherwise adds -2, -3, ... and finally a random id.
+const pickInviteId = async (data: { groomName: string; brideName: string; occasion: string }) => {
+  const base = buildInviteSlug(data);
+  if (base) {
+    for (let n = 1; n <= 20; n++) {
+      const candidate = n === 1 ? base : `${base}-${n}`;
+      const taken = await Promise.race([
+        getDoc(doc(db, 'invitations', candidate)).then(snap => snap.exists()),
+        new Promise<boolean>((_, reject) => setTimeout(() => reject(Object.assign(new Error('timeout'), { code: 'save-timeout' })), 15000)),
+      ]);
+      if (!taken) return candidate;
+    }
+  }
+  return doc(collection(db, 'invitations')).id;
+};
+
 const getCoupleDisplayName = (groomName: string, brideName: string) =>
   `${groomName || 'Groom'} & ${brideName || 'Bride'}`;
 
@@ -593,7 +623,7 @@ export default function App() {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     // Share links look like /i/<id>; older links use ?invite=<id>.
-    const pathMatch = window.location.pathname.match(/^\/i\/([A-Za-z0-9]+)\/?$/);
+    const pathMatch = window.location.pathname.match(/^\/i\/([A-Za-z0-9-]+)\/?$/);
     const id = pathMatch?.[1] || params.get('invite');
 
     if (id) {
@@ -1092,8 +1122,7 @@ export default function App() {
       let finalId = inviteId;
 
       if (!finalId) {
-        const newInviteRef = doc(collection(db, 'invitations'));
-        finalId = newInviteRef.id;
+        finalId = await pickInviteId(eventData);
       }
 
       const inviteRef = doc(db, 'invitations', finalId);

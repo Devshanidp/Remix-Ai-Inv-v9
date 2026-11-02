@@ -16,7 +16,7 @@ export type Invite = {
 };
 
 // Invite IDs are Firestore auto-IDs (20 alphanumeric chars).
-export const isValidId = (id: string | null): id is string => !!id && /^[A-Za-z0-9]{10,40}$/.test(id);
+export const isValidId = (id: string | null): id is string => !!id && /^[A-Za-z0-9-]{3,80}$/.test(id);
 
 // Reads the invitation through the Firestore REST API (rules allow public reads).
 export async function getInvite(id: string): Promise<Invite | null> {
