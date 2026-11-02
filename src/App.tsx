@@ -2015,21 +2015,9 @@ export default function App() {
               </div>
             </div>
 
-            {/* Floating Share & Map Buttons */}
-            {(canShareInvite && isViewMode) || eventData.location ? (
+            {/* Floating Map Button */}
+            {eventData.location ? (
               <div className={`absolute right-6 z-40 flex flex-col gap-3 ${!isViewMode ? 'bottom-28' : 'bottom-6'}`}>
-                {canShareInvite && isViewMode && (
-                  <a
-                    href={getWhatsAppShareUrl()}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="bg-[#25D366] text-white p-4 rounded-full shadow-lg hover:bg-[#20bd5a] transition-colors flex items-center justify-center border border-[#20bd5a]"
-                    title="Share on WhatsApp"
-                    aria-label="Share on WhatsApp"
-                  >
-                    <WhatsAppIcon className="w-6 h-6" />
-                  </a>
-                )}
                 {eventData.location && (
                   <button
                     onClick={() => setShowMapModal(true)}
