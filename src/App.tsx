@@ -674,6 +674,29 @@ export default function App() {
     return () => unsubscribe();
   }, [inviteId]);
 
+  // TEMP test helper: fills sample details and opens the preview. Remove before launch.
+  const fillTestData = () => {
+    const u = (id: string) => `https://images.unsplash.com/photo-${id}?auto=format&fit=crop&w=800&q=80`;
+    setEventData(prev => ({
+      ...prev,
+      occasion: prev.occasion || 'Wedding',
+      groomName: 'Rahul',
+      brideName: 'Anjali',
+      groomParents: 'Mr. & Mrs. Kumar',
+      brideParents: 'Mr. & Mrs. Nair',
+      date: '2026-12-12',
+      time: '10:30',
+      location: 'Kochi, Kerala',
+      schedule: '10:30 AM - Ceremony, 12:30 PM - Lunch, 6:00 PM - Reception',
+      menu: 'Kerala Sadya, Biryani, Payasam',
+      bridePhoto: u('1583939003579-730e3918a45a'),
+      groomPhoto: u('1507003211169-0a1dd7228f2d'),
+      galleryPhotos: [u('1519741497674-611481863552'), u('1511285560929-80b456fea0bc'), u('1465495976277-4387d4b0b4c6')],
+      memoriesPhotos: [u('1522673607200-164d1b6ce486')],
+    }));
+    setShowPreview(true);
+  };
+
   const startChat = (event: EventType, template: InviteTemplate) => {
     setEventData(prev => ({ ...prev, occasion: event.label, templateId: template.id }));
     setScreen('chat');
@@ -1245,6 +1268,12 @@ export default function App() {
                 className="bg-[var(--accent-soft)] text-[var(--accent-dark)] font-bold px-3 py-1.5 rounded-full hover:brightness-95 transition"
               >
                 Change design
+              </button>
+              <button
+                onClick={fillTestData}
+                className="bg-amber-100 text-amber-800 font-bold px-3 py-1.5 rounded-full hover:brightness-95 transition"
+              >
+                Test fill
               </button>
             </div>
           </div>
