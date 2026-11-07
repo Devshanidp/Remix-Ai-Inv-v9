@@ -46,24 +46,28 @@ export const EVENT_TYPES: EventType[] = [
   { id: 'other', label: 'Other Events', tagline: 'Moments worth sharing', image: img('1464366400600-7168b8af9bc3', 600), color: '#16917f', icon: '📅', comingSoon: true },
 ];
 
-export const TIERS: { id: Tier; label: string; benefits: string[] }[] = [
+export const TIERS: { id: Tier; label: string; price: number; benefits: string[] }[] = [
   {
     id: 'luxury',
+    price: 999,
     label: 'Luxury',
     benefits: ['Curtain-opening entrance with floral arch', 'Cinematic full-photo cover', 'Gold & jewel-tone palettes', 'Regal display fonts', 'Music, gallery, RSVP & guest list'],
   },
   {
     id: 'premium',
+    price: 599,
     label: 'Premium',
     benefits: ['Photo-led cover designs', 'Elegant serif & script fonts', 'Curated colour palettes', 'Music, gallery, RSVP & guest list'],
   },
   {
     id: 'standard',
+    price: 399,
     label: 'Standard',
     benefits: ['Soft faded photo cover', 'Classic serif headings', 'Music, gallery, RSVP & guest list'],
   },
   {
     id: 'basic',
+    price: 0,
     label: 'Basic',
     benefits: ['Clean, minimal layout', 'Simple neutral palettes', 'Gallery, RSVP & guest list'],
   },
@@ -117,3 +121,5 @@ export const templateStyle = (t: InviteTemplate): CSSProperties => ({
   ['--accent-soft' as any]: t.accentSoft,
   ['--font-serif' as any]: t.font,
 });
+
+export const tierPrice = (tier: Tier) => TIERS.find(t => t.id === tier)?.price ?? 0;

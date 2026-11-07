@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { ArrowLeft, ArrowRight, Check, Crown, Gem, Plus, Sparkle, Star } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Check, Crown, Gem, Lock, Plus, Sparkle, Star, X } from 'lucide-react';
 import { EVENT_TYPES, TEMPLATES, TIERS, type EventType, type InviteTemplate, type Tier } from './templates';
 import { FloralArch, sceneColors } from './GrandEntrance';
 
@@ -124,6 +124,7 @@ export const TemplatePicker = ({
   const initialTier = TEMPLATES.find(t => t.id === selectedId)?.tier || 'premium';
   const [tier, setTier] = useState<Tier>(initialTier);
   const [showBenefits, setShowBenefits] = useState(false);
+  const [payFor, setPayFor] = useState<InviteTemplate | null>(null);
   const tierInfo = TIERS.find(t => t.id === tier)!;
   const designs = TEMPLATES.filter(t => t.tier === tier);
 
@@ -149,7 +150,12 @@ export const TemplatePicker = ({
               className={`flex flex-col md:flex-row items-center justify-center gap-1 md:gap-3 py-2.5 md:py-4 rounded-xl text-xs md:text-lg font-semibold transition-all ${active ? 'bg-white shadow-sm text-[#7a1424]' : 'text-gray-400 hover:text-gray-200'}`}
             >
               <Icon size={20} />
-              {t.label}
+              <span className="flex flex-col md:flex-row items-center md:gap-2 leading-tight">
+                {t.label}
+                <span className={`text-[10px] md:text-sm font-bold px-1.5 md:px-2 py-0.5 rounded-full ${t.price === 0 ? 'bg-emerald-100 text-emerald-700' : active ? 'bg-[#7a1424]/10 text-[#7a1424]' : 'bg-white/10 text-gray-300'}`}>
+                  {t.price === 0 ? 'Free' : `₹${t.price}`}
+                </span>
+              </span>
             </button>
           );
         })}
@@ -203,7 +209,7 @@ export const TemplatePicker = ({
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.05 }}
-              onClick={() => onSelect(t)}
+              onClick={() => (t.tier === 'basic' ? onSelect(t) : setPayFor(t))}
               className={`group text-left rounded-3xl p-3 md:p-5 transition-all hover:-translate-y-1 hover:shadow-lg ${selected ? 'ring-2 ring-offset-2' : ''}`}
               style={{ background: t.accentSoft, ['--tw-ring-color' as any]: t.accent }}
             >
@@ -220,12 +226,59 @@ export const TemplatePicker = ({
                 <p className="text-sm text-gray-500">{t.tagline}</p>
               </div>
               <span className="mt-2 mx-1 inline-flex items-center gap-1 text-sm font-bold" style={{ color: t.accentDark }}>
-                {selected ? 'Selected' : 'Use this design'} <ArrowRight size={14} className="transition-transform group-hover:translate-x-0.5" />
+                {t.tier !== 'basic' && !selected && <Lock size={13} />}
+                {selected ? 'Selected' : t.tier === 'basic' ? 'Use this design' : `Unlock for ₹${tierInfo.price}`} <ArrowRight size={14} className="transition-transform group-hover:translate-x-0.5" />
               </span>
             </motion.button>
           );
         })}
       </div>
+
+      <AnimatePresence>
+        {payFor && <PaymentModal template={payFor} price={tierInfo.price} tierLabel={tierInfo.label} onClose={() => setPayFor(null)} />}
+      </AnimatePresence>
     </div>
+  );
+};
+
+// Shown when a paid design is picked. Drop the QR image at public/payment-qr.png.
+const PaymentModal = ({ template, price, tierLabel, onClose }: { template: InviteTemplate; price: number; tierLabel: string; onClose: () => void }) => {
+  const [qrMissing, setQrMissing] = useState(false);
+  return (
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose}
+      className="fixed inset-0 z-[120] bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+      <motion.div initial={{ scale: 0.95, y: 10 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.95, y: 10 }} onClick={e => e.stopPropagation()}
+        className="relative bg-white rounded-3xl w-full max-w-sm p-6 text-center shadow-2xl">
+        <button onClick={onClose} className="absolute top-3 right-3 p-2 rounded-full text-gray-400 hover:bg-gray-100" aria-label="Close"><X size={20} /></button>
+        <p className="text-xs font-bold tracking-widest uppercase text-[#9b1c2e]">{tierLabel} design</p>
+        <h3 className="text-2xl font-bold text-gray-800 mt-1 font-['Playfair_Display',serif]">{template.name}</h3>
+        <p className="text-4xl font-bold text-gray-900 mt-3">₹{price}</p>
+        <p className="text-gray-500 text-sm mt-1">Scan to pay with any UPI app</p>
+        <div className="mt-4 mx-auto w-60 h-80 rounded-2xl border-2 border-dashed border-gray-200 flex items-center justify-center overflow-hidden bg-gray-50">
+          {qrMissing ? (
+            <span className="text-gray-400 text-sm px-4">Payment QR coming soon</span>
+          ) : (
+            <img src="/payment-qr.png" alt="Payment QR code" className="w-full h-full object-contain" onError={() => setQrMissing(true)} />
+          )}
+        </div>
+        <a
+          href={`upi://pay?pa=shanid77shan@okhdfcbank&pn=ShanidPsaid&am=${price}&cu=INR&tn=${encodeURIComponent(template.name + ' design')}`}
+          className="mt-4 block w-full bg-[#9b1c2e] text-white font-bold py-3 rounded-full hover:bg-[#7a1424] md:hidden"
+        >
+          Pay ₹{price} with UPI app
+        </a>
+        <p className="text-gray-500 text-xs mt-2 select-all">UPI ID: shanid77shan@okhdfcbank</p>
+        <p className="text-gray-500 text-xs mt-3">After paying, send the payment screenshot on WhatsApp and we'll unlock this design for you.</p>
+        <a
+          href={`https://wa.me/918848133032?text=${encodeURIComponent(`Hi! I paid ₹${price} for the ${template.name} (${tierLabel}) invitation design. Sharing the payment screenshot.`)}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="mt-4 flex items-center justify-center gap-2 w-full bg-[#25D366] text-white font-bold py-3 rounded-full hover:bg-[#20bd5a]"
+        >
+          Send screenshot on WhatsApp
+        </a>
+        <button onClick={onClose} className="mt-3 w-full bg-gray-100 text-gray-700 font-bold py-3 rounded-full hover:bg-gray-200">Choose a free design instead</button>
+      </motion.div>
+    </motion.div>
   );
 };
