@@ -247,31 +247,33 @@ export const PaymentModal = ({ template, price, tierLabel, onClose }: { template
         <p className="text-xs font-bold tracking-widest uppercase text-[#9b1c2e]">{tierLabel} design</p>
         <h3 className="text-2xl font-bold text-gray-800 mt-1 font-['Playfair_Display',serif]">{template.name}</h3>
         <p className="text-4xl font-bold text-gray-900 mt-3">₹{price}</p>
-        <p className="text-gray-500 text-sm mt-1">Scan to pay with any UPI app</p>
-        <div className="mt-4 mx-auto w-60 h-80 rounded-2xl border-2 border-dashed border-gray-200 flex items-center justify-center overflow-hidden bg-gray-50">
+        <p className="text-gray-500 text-sm mt-1">Pay once to share your {tierLabel.toLowerCase()} invitation</p>
+        <div className="mt-4 mx-auto w-52 h-52 rounded-2xl border border-gray-200 flex items-center justify-center overflow-hidden bg-gray-50">
           {qrMissing ? (
             <span className="text-gray-400 text-sm px-4">Payment QR coming soon</span>
           ) : (
             <img src="/payment-qr.png" alt="Payment QR code" className="w-full h-full object-contain" onError={() => setQrMissing(true)} />
           )}
         </div>
+        <p className="mt-2 font-bold text-gray-800">J@S Tech Solution</p>
+        <p className="text-gray-400 text-xs">Scan with GPay, PhonePe, Paytm or any UPI app</p>
         <a
-          href={`upi://pay?pa=shanid77shan@okhdfcbank&pn=ShanidPsaid&am=${price}&cu=INR&tn=${encodeURIComponent(template.name + ' design')}`}
+          href={`upi://pay?pa=shanid77shan@okhdfcbank&pn=${encodeURIComponent('J@S Tech Solution')}&am=${price}&cu=INR&tn=${encodeURIComponent(template.name + ' design')}`}
           className="mt-4 block w-full bg-[#9b1c2e] text-white font-bold py-3 rounded-full hover:bg-[#7a1424] md:hidden"
         >
           Pay ₹{price} with UPI app
         </a>
         <p className="text-gray-500 text-xs mt-2 select-all">UPI ID: shanid77shan@okhdfcbank</p>
-        <p className="text-gray-500 text-xs mt-3">After paying, send the payment screenshot on WhatsApp and we'll unlock this design for you.</p>
+        <p className="text-gray-500 text-xs mt-3">After paying, send the payment screenshot on WhatsApp and we'll unlock sharing for you.</p>
         <a
-          href={`https://wa.me/918848133032?text=${encodeURIComponent(`Hi! I paid ₹${price} for the ${template.name} (${tierLabel}) invitation design. Sharing the payment screenshot.`)}`}
+          href={`https://wa.me/918848133032?text=${encodeURIComponent(`Hi! I paid ₹${price} to J@S Tech Solution for the ${template.name} (${tierLabel}) invitation. Sharing the payment screenshot.`)}`}
           target="_blank"
           rel="noopener noreferrer"
           className="mt-4 flex items-center justify-center gap-2 w-full bg-[#25D366] text-white font-bold py-3 rounded-full hover:bg-[#20bd5a]"
         >
           Send screenshot on WhatsApp
         </a>
-        <button onClick={onClose} className="mt-3 w-full bg-gray-100 text-gray-700 font-bold py-3 rounded-full hover:bg-gray-200">Choose a free design instead</button>
+        <button onClick={onClose} className="mt-3 w-full bg-gray-100 text-gray-700 font-bold py-3 rounded-full hover:bg-gray-200">Keep editing</button>
       </motion.div>
     </motion.div>
   );

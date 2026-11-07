@@ -714,7 +714,6 @@ export default function App() {
   };
   const createFromDemo = () => {
     if (!demo) return;
-    if (tierPrice(demo.template.tier) > 0) { setPayFor(demo.template); return; }
     const { event, template } = demo;
     closeDemo();
     startChat(event, template);
@@ -1162,6 +1161,11 @@ export default function App() {
   const canShareInvite = Boolean(inviteId);
 
   const handleShareClick = async () => {
+    // Paid designs: building and previewing is free, sharing needs payment.
+    if (tierPrice(getTemplate(eventData.templateId).tier) > 0) {
+      setPayFor(getTemplate(eventData.templateId));
+      return;
+    }
     setIsPublishing(true);
     try {
       const isFirstPublish = !inviteId;
@@ -2090,7 +2094,6 @@ export default function App() {
                 </button>
                 <button onClick={createFromDemo} className="flex-1 sm:flex-none bg-[var(--accent)] text-white px-5 md:px-7 py-3 rounded-full font-bold hover:brightness-110 transition flex items-center justify-center gap-2 shadow-md">
                   <Wand2 size={18} /> Create &amp; invite yours
-                  {tierPrice(demo.template.tier) > 0 && <span className="bg-white/20 rounded-full px-2 py-0.5 text-sm">₹{tierPrice(demo.template.tier)}</span>}
                 </button>
               </div>
             )}
@@ -2125,6 +2128,7 @@ export default function App() {
                   >
                     <Share2 size={20} />
                     <span className="hidden sm:inline">{isPublishing ? 'Saving...' : 'Share'}</span>
+                    {tierPrice(activeTemplate.tier) > 0 && <span className="text-xs bg-[var(--accent)] text-white rounded-full px-2 py-0.5">₹{tierPrice(activeTemplate.tier)}</span>}
                   </button>
                 </div>
               </div>
@@ -2433,7 +2437,6 @@ export default function App() {
               onBack={() => setShowTemplatePicker(false)}
               backLabel="Done"
               onSelect={(t) => {
-                if (tierPrice(t.tier) > 0 && t.id !== activeTemplate.id) { setPayFor(t); return; }
                 setEventData(prev => ({ ...prev, templateId: t.id }));
                 setShowTemplatePicker(false);
               }}
