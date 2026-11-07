@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { ArrowLeft, ArrowRight, Check, Crown, Gem, Lock, Plus, Sparkle, Star, X } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Check, Crown, Gem, Plus, Sparkle, Star, X } from 'lucide-react';
 import { EVENT_TYPES, TEMPLATES, TIERS, type EventType, type InviteTemplate, type Tier } from './templates';
 import { FloralArch, sceneColors } from './GrandEntrance';
 
@@ -124,7 +124,6 @@ export const TemplatePicker = ({
   const initialTier = TEMPLATES.find(t => t.id === selectedId)?.tier || 'premium';
   const [tier, setTier] = useState<Tier>(initialTier);
   const [showBenefits, setShowBenefits] = useState(false);
-  const [payFor, setPayFor] = useState<InviteTemplate | null>(null);
   const tierInfo = TIERS.find(t => t.id === tier)!;
   const designs = TEMPLATES.filter(t => t.tier === tier);
 
@@ -209,7 +208,7 @@ export const TemplatePicker = ({
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.05 }}
-              onClick={() => (t.tier === 'basic' ? onSelect(t) : setPayFor(t))}
+              onClick={() => onSelect(t)}
               className={`group text-left rounded-3xl p-3 md:p-5 transition-all hover:-translate-y-1 hover:shadow-lg ${selected ? 'ring-2 ring-offset-2' : ''}`}
               style={{ background: t.accentSoft, ['--tw-ring-color' as any]: t.accent }}
             >
@@ -226,23 +225,18 @@ export const TemplatePicker = ({
                 <p className="text-sm text-gray-500">{t.tagline}</p>
               </div>
               <span className="mt-2 mx-1 inline-flex items-center gap-1 text-sm font-bold" style={{ color: t.accentDark }}>
-                {t.tier !== 'basic' && !selected && <Lock size={13} />}
-                {selected ? 'Selected' : t.tier === 'basic' ? 'Use this design' : `Unlock for ₹${tierInfo.price}`} <ArrowRight size={14} className="transition-transform group-hover:translate-x-0.5" />
+                {selected ? 'Selected' : 'View demo'} <ArrowRight size={14} className="transition-transform group-hover:translate-x-0.5" />
               </span>
             </motion.button>
           );
         })}
       </div>
-
-      <AnimatePresence>
-        {payFor && <PaymentModal template={payFor} price={tierInfo.price} tierLabel={tierInfo.label} onClose={() => setPayFor(null)} />}
-      </AnimatePresence>
     </div>
   );
 };
 
 // Shown when a paid design is picked. Drop the QR image at public/payment-qr.png.
-const PaymentModal = ({ template, price, tierLabel, onClose }: { template: InviteTemplate; price: number; tierLabel: string; onClose: () => void }) => {
+export const PaymentModal = ({ template, price, tierLabel, onClose }: { template: InviteTemplate; price: number; tierLabel: string; onClose: () => void }) => {
   const [qrMissing, setQrMissing] = useState(false);
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose}

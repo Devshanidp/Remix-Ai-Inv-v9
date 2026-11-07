@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Send, Image as ImageIcon, Upload, Eye, X, Check, MapPin, Calendar, Share2, Copy, Users, Wand2, Settings, Pencil, Music, Play, Pause, UtensilsCrossed } from 'lucide-react';
+import { Send, Image as ImageIcon, Upload, Eye, X, Check, MapPin, Calendar, Share2, Copy, Users, Wand2, Settings, Pencil, Music, Play, Pause, UtensilsCrossed, ArrowLeft } from 'lucide-react';
 import { db } from './firebase';
 import { doc, setDoc, getDoc, collection, addDoc, onSnapshot, updateDoc } from 'firebase/firestore';
-import { getTemplate, templateStyle, DEFAULT_TEMPLATE_ID, type EventType, type InviteTemplate } from './templates';
-import { EventHome, TemplatePicker } from './TemplateGallery';
+import { getTemplate, templateStyle, DEFAULT_TEMPLATE_ID, TIERS, tierPrice, type EventType, type InviteTemplate } from './templates';
+import { EventHome, PaymentModal, TemplatePicker } from './TemplateGallery';
 import { GrandEntrance, InvitationCard } from './GrandEntrance';
 
 type MessageType = 'text' | 'options' | 'input' | 'upload' | 'preview_btn' | 'upload_audio';
@@ -507,37 +507,42 @@ const MusicPlayer = ({ url, name, isViewMode, isPublished, hasRsvps }: { url: st
   );
 };
 
+const BLANK_EVENT = {
+  occasion: '',
+  brideName: '',
+  groomName: '',
+  brideParents: '',
+  groomParents: '',
+  date: '',
+  time: '',
+  location: '',
+  schedule: '',
+  menu: '',
+  bannerImage: '',
+  bridePhoto: '',
+  groomPhoto: '',
+  galleryPhotos: [] as string[],
+  memoriesPhotos: [] as string[],
+  musicUrl: '',
+  musicName: '',
+  templateId: ''
+};
+
 export default function App() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   
   // State to store collected event data
-  const [eventData, setEventData] = useState({
-    occasion: '',
-    brideName: '',
-    groomName: '',
-    brideParents: '',
-    groomParents: '',
-    date: '',
-    time: '',
-    location: '',
-    schedule: '',
-    menu: '',
-    bannerImage: '',
-    bridePhoto: '',
-    groomPhoto: '',
-    galleryPhotos: [] as string[],
-    memoriesPhotos: [] as string[],
-    musicUrl: '',
-    musicName: '',
-    templateId: ''
-  });
+  const [eventData, setEventData] = useState(BLANK_EVENT);
 
   // Start screens: pick an occasion, then a design, then the chat builds the rest.
   const [screen, setScreen] = useState<'home' | 'templates' | 'chat'>('home');
   const [selectedEvent, setSelectedEvent] = useState<EventType | null>(null);
   const [showTemplatePicker, setShowTemplatePicker] = useState(false);
+  // Design demo: sample invitation shown before the customer starts building.
+  const [demo, setDemo] = useState<{ event: EventType; template: InviteTemplate } | null>(null);
+  const [payFor, setPayFor] = useState<InviteTemplate | null>(null);
   // Curtain designs play their opening each time the invitation is shown.
   const [entranceDone, setEntranceDone] = useState(false);
 
@@ -675,11 +680,12 @@ export default function App() {
   }, [inviteId]);
 
   // TEMP test helper: fills sample details and opens the preview. Remove before launch.
-  const fillTestData = () => {
+  const fillTestData = (templateId?: string, occasion?: string) => {
     const u = (id: string) => `https://images.unsplash.com/photo-${id}?auto=format&fit=crop&w=800&q=80`;
     setEventData(prev => ({
       ...prev,
-      occasion: prev.occasion || 'Wedding',
+      occasion: occasion || prev.occasion || 'Wedding',
+      templateId: templateId || prev.templateId,
       groomName: 'Rahul',
       brideName: 'Anjali',
       groomParents: 'Mr. & Mrs. Kumar',
@@ -695,6 +701,23 @@ export default function App() {
       memoriesPhotos: [u('1522673607200-164d1b6ce486')],
     }));
     setShowPreview(true);
+  };
+
+  const openDemo = (event: EventType, template: InviteTemplate) => {
+    setDemo({ event, template });
+    fillTestData(template.id, event.label);
+  };
+  const closeDemo = () => {
+    setShowPreview(false);
+    setDemo(null);
+    setEventData(BLANK_EVENT);
+  };
+  const createFromDemo = () => {
+    if (!demo) return;
+    if (tierPrice(demo.template.tier) > 0) { setPayFor(demo.template); return; }
+    const { event, template } = demo;
+    closeDemo();
+    startChat(event, template);
   };
 
   const startChat = (event: EventType, template: InviteTemplate) => {
@@ -1231,14 +1254,14 @@ export default function App() {
   if (!isViewMode && screen === 'home') {
     return <EventHome onSelect={(ev) => { setSelectedEvent(ev); setScreen('templates'); }} />;
   }
-  if (!isViewMode && screen === 'templates' && selectedEvent) {
+  if (!isViewMode && screen === 'templates' && selectedEvent && !demo) {
     return (
       <div className="min-h-screen bg-[#0d0b0e]">
         <TemplatePicker
           eventLabel={selectedEvent.label}
           onBack={() => setScreen('home')}
           backLabel="All occasions"
-          onSelect={(t) => startChat(selectedEvent, t)}
+          onSelect={(t) => openDemo(selectedEvent, t)}
         />
       </div>
     );
@@ -1270,7 +1293,7 @@ export default function App() {
                 Change design
               </button>
               <button
-                onClick={fillTestData}
+                onClick={() => fillTestData()}
                 className="bg-amber-100 text-amber-800 font-bold px-3 py-1.5 rounded-full hover:brightness-95 transition"
               >
                 Test fill
@@ -1552,10 +1575,10 @@ export default function App() {
             {/* Modal Header */}
             {!isViewMode && (
               <div className="h-16 border-b border-gray-100 flex items-center justify-between px-6 bg-white shrink-0">
-                <h2 className="font-bold text-gray-800 text-lg">Website Preview</h2>
+                <h2 className="font-bold text-gray-800 text-lg">{demo ? `${demo.template.name} · Demo` : 'Website Preview'}</h2>
                 <button 
                   onClick={() => {
-                    setShowPreview(false);
+                    if (demo) closeDemo(); else setShowPreview(false);
                   }}
                   className="p-2 hover:bg-gray-100 rounded-full transition-colors"
                 >
@@ -2059,8 +2082,21 @@ export default function App() {
               </div>
             ) : null}
 
+            {/* Demo Action Bar */}
+            {!isViewMode && demo && (
+              <div className="border-t border-gray-100 bg-white shrink-0 flex items-center justify-between gap-3 px-4 md:px-6 py-3 shadow-[0_-4px_20px_rgba(0,0,0,0.05)]">
+                <button onClick={closeDemo} className="bg-gray-100 text-gray-800 px-4 md:px-5 py-3 rounded-full font-bold hover:bg-gray-200 transition-colors flex items-center gap-2">
+                  <ArrowLeft size={18} /> <span className="hidden sm:inline">Back to designs</span>
+                </button>
+                <button onClick={createFromDemo} className="flex-1 sm:flex-none bg-[var(--accent)] text-white px-5 md:px-7 py-3 rounded-full font-bold hover:brightness-110 transition flex items-center justify-center gap-2 shadow-md">
+                  <Wand2 size={18} /> Create &amp; invite yours
+                  {tierPrice(demo.template.tier) > 0 && <span className="bg-white/20 rounded-full px-2 py-0.5 text-sm">₹{tierPrice(demo.template.tier)}</span>}
+                </button>
+              </div>
+            )}
+
             {/* Action Bar */}
-            {!isViewMode && (
+            {!isViewMode && !demo && (
               <div className="h-20 border-t border-gray-100 bg-white shrink-0 flex items-center justify-between px-6 shadow-[0_-4px_20px_rgba(0,0,0,0.05)]">
                 <div className="flex items-center gap-3">
                   {rsvps.length > 0 && (
@@ -2397,6 +2433,7 @@ export default function App() {
               onBack={() => setShowTemplatePicker(false)}
               backLabel="Done"
               onSelect={(t) => {
+                if (tierPrice(t.tier) > 0 && t.id !== activeTemplate.id) { setPayFor(t); return; }
                 setEventData(prev => ({ ...prev, templateId: t.id }));
                 setShowTemplatePicker(false);
               }}
@@ -2405,6 +2442,16 @@ export default function App() {
         )}
       </AnimatePresence>
 
+      <AnimatePresence>
+        {payFor && (
+          <PaymentModal
+            template={payFor}
+            price={tierPrice(payFor.tier)}
+            tierLabel={TIERS.find(x => x.id === payFor.tier)!.label}
+            onClose={() => setPayFor(null)}
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 }
