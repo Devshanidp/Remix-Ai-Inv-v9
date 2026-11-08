@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { Send, Image as ImageIcon, Upload, Eye, X, Check, MapPin, Calendar, Share2, Copy, Users, Wand2, Settings, Pencil, Music, Play, Pause, UtensilsCrossed, ArrowLeft } from 'lucide-react';
 import { db } from './firebase';
 import { doc, setDoc, getDoc, collection, addDoc, onSnapshot, updateDoc } from 'firebase/firestore';
-import { getTemplate, templateStyle, DEFAULT_TEMPLATE_ID, TIERS, tierPrice, type EventType, type InviteTemplate } from './templates';
+import { getTemplate, templateStyle, DEFAULT_TEMPLATE_ID, TIERS, tierPrice, tierSections, nextStepFor, type Section, type EventType, type InviteTemplate } from './templates';
 import { EventHome, PaymentModal, TemplatePicker } from './TemplateGallery';
 import { GrandEntrance, InvitationCard } from './GrandEntrance';
 
@@ -858,74 +858,75 @@ export default function App() {
   };
 
   const proceedToNextStep = (step: string) => {
-    if (step === 'groomName') {
+    const next = nextStepFor(getTemplate(eventData.templateId).tier, step);
+    if (next === 'brideName') {
       setTimeout(() => {
         addBotMessage(<span>And what is the <span className="font-bold text-[var(--accent)]">Bride's</span> name?</span>);
         addBotInput('text', 'e.g. Anjali', 'brideName');
       }, 1000);
-    } else if (step === 'brideName') {
+    } else if (next === 'groomParents') {
       setTimeout(() => {
         addBotMessage("What are the Groom's parents' names?");
         addBotInput('text', 'e.g. Mr. & Mrs. Verma', 'groomParents');
       }, 1000);
-    } else if (step === 'groomParents') {
+    } else if (next === 'brideParents') {
       setTimeout(() => {
         addBotMessage("What are the Bride's parents' names?");
         addBotInput('text', 'e.g. Mr. & Mrs. Sharma', 'brideParents');
       }, 1000);
-    } else if (step === 'brideParents') {
+    } else if (next === 'date') {
       setTimeout(() => {
         addBotMessage("When is the big day?");
         addBotInput('date', '', 'date');
         setInputValue(new Date().toISOString().split('T')[0]);
       }, 1000);
-    } else if (step === 'date') {
+    } else if (next === 'time') {
       setTimeout(() => {
         addBotMessage("What time does the event start?");
         addBotInput('time', '', 'time');
         setInputValue('10:00');
       }, 1000);
-    } else if (step === 'time') {
+    } else if (next === 'location') {
       setTimeout(() => {
         addBotMessage("Where is the event taking place? (Search for Venue & City)");
         addBotInput('location', 'Search location...', 'location');
       }, 1000);
-    } else if (step === 'location') {
+    } else if (next === 'schedule') {
       setTimeout(() => {
         addBotMessage("Do you have a specific schedule or timings for different events? (e.g., 10 AM: Baraat, 12 PM: Wedding. Or type 'Skip')");
         addBotInput('text', 'e.g. 10 AM: Ceremony, 1 PM: Reception', 'schedule');
       }, 1000);
-    } else if (step === 'schedule') {
+    } else if (next === 'menu') {
       setTimeout(() => {
         addBotMessage("Bon appétit! 🍽️ What's on the menu? Separate courses with ';' (e.g. Welcome Drinks: Mojito, Fresh Lime; Main Course: Biryani, Butter Chicken). Or type 'Skip'");
         addBotInput('text', 'e.g. Starters: Paneer Tikka; Desserts: Gulab Jamun', 'menu');
       }, 1000);
-    } else if (step === 'menu') {
+    } else if (next === 'bannerImage') {
       setTimeout(() => {
         addBotMessage("Awesome! Let's set up a beautiful banner for your website. Please upload one.");
         addBotUpload('bannerImage');
       }, 1000);
-    } else if (step === 'bannerImage') {
+    } else if (next === 'groomPhoto') {
       setTimeout(() => {
         addBotMessage("Awesome! Now, please upload a handsome picture of the Groom.");
         addBotUpload('groomPhoto');
       }, 1500);
-    } else if (step === 'groomPhoto') {
+    } else if (next === 'bridePhoto') {
       setTimeout(() => {
         addBotMessage("Lovely! Now, please upload a beautiful picture of the Bride.");
         addBotUpload('bridePhoto');
       }, 1500);
-    } else if (step === 'bridePhoto') {
+    } else if (next === 'galleryPhotos') {
       setTimeout(() => {
         addBotMessage("Great! Finally, upload a few more pictures of the couple (up to 4 photos) for the gallery.");
         addBotUpload('galleryPhotos', true);
       }, 1500);
-    } else if (step === 'galleryPhotos') {
+    } else if (next === 'memoriesPhotos') {
       setTimeout(() => {
         addBotMessage("Awesome! Now, let's add some special 'Memories'. Upload photos for an auto-sliding memories section (up to 10 photos).");
         addBotUpload('memoriesPhotos', true);
       }, 1500);
-    } else if (step === 'memoriesPhotos') {
+    } else if (next === 'music') {
       setTimeout(() => {
         addBotMessage("Would you like to add background music to your website?");
         setMessages(prev => [...prev, {
@@ -939,7 +940,7 @@ export default function App() {
           ]
         }]);
       }, 1500);
-    } else if (step === 'music') {
+    } else if (next === 'done') {
       setTimeout(() => {
         setMessages(prev => [...prev, {
           id: (Date.now() + 1).toString(),
@@ -1273,6 +1274,8 @@ export default function App() {
 
   const activeTemplate = getTemplate(eventData.templateId || DEFAULT_TEMPLATE_ID);
   const darkHero = activeTemplate.hero === 'dark';
+  const sections = tierSections(activeTemplate.tier);
+  const has = (sec: Section) => sections.includes(sec);
   const previewBanner = eventData.bannerImage || activeTemplate.image || DEFAULT_WEDDING_IMAGES.banner;
   const previewGroomPhoto = eventData.groomPhoto || DEFAULT_WEDDING_IMAGES.groom;
   const previewBridePhoto = eventData.bridePhoto || DEFAULT_WEDDING_IMAGES.bride;
@@ -1596,7 +1599,7 @@ export default function App() {
               <div className="max-w-4xl mx-auto bg-white min-h-full shadow-sm pb-20 relative">
                 
                 {/* Music Player */}
-                {eventData.musicUrl && (
+                {has('music') && eventData.musicUrl && (
                   <MusicPlayer 
                     url={eventData.musicUrl} 
                     name={eventData.musicName} 
@@ -1683,14 +1686,14 @@ export default function App() {
                 )}
 
                 {/* Countdown Section */}
-                {eventData.date && (
+                {has('countdown') && eventData.date && (
                   <div className="relative -mt-16 z-20 px-4">
                     <CountdownTimer targetDate={eventData.date} targetTime={eventData.time} />
                   </div>
                 )}
 
                 {/* Couple Section */}
-                <div className="py-20 px-6 max-w-5xl mx-auto overflow-hidden">
+                <div className={`py-20 px-6 max-w-5xl mx-auto overflow-hidden ${has('couple') ? '' : 'hidden'}`}>
                   <div className="flex flex-col md:flex-row items-center justify-center gap-12">
                     <motion.div 
                       initial={{ opacity: 0, x: -50 }}
@@ -1735,7 +1738,7 @@ export default function App() {
                 </div>
 
                 {/* Gallery Section */}
-                <div className="py-16 px-6 bg-[var(--accent-soft)]/50 overflow-hidden">
+                <div className={`py-16 px-6 bg-[var(--accent-soft)]/50 overflow-hidden ${has('gallery') ? '' : 'hidden'}`}>
                     <motion.h2 
                       initial={{ opacity: 0, x: -30 }}
                       whileInView={{ opacity: 1, x: 0 }}
@@ -1762,7 +1765,7 @@ export default function App() {
                   </div>
 
                 {/* Memories Section */}
-                <div className="py-16 px-6 max-w-5xl mx-auto overflow-hidden">
+                <div className={`py-16 px-6 max-w-5xl mx-auto overflow-hidden ${has('memories') ? '' : 'hidden'}`}>
                     <motion.h2 
                       initial={{ opacity: 0, x: 30 }}
                       whileInView={{ opacity: 1, x: 0 }}
@@ -1783,7 +1786,7 @@ export default function App() {
                   </div>
 
                 {/* Venue & Location Section */}
-                {eventData.location && (
+                {has('venue') && eventData.location && (
                   <div className="py-10 px-6 max-w-2xl mx-auto text-center overflow-hidden">
                     <motion.h2 
                       initial={{ opacity: 0, x: -30 }}
@@ -1835,7 +1838,7 @@ export default function App() {
                 )}
 
                 {/* Details Section & RSVP */}
-                <div className="py-20 px-6 text-center overflow-hidden">
+                <div className={`py-20 px-6 text-center overflow-hidden ${has('rsvp') ? '' : 'hidden'}`}>
                   <motion.h2 
                     initial={{ opacity: 0, y: 20 }}
                     whileInView={{ opacity: 1, y: 0 }}
@@ -1856,24 +1859,9 @@ export default function App() {
                     Please explore the website for more details about the event, travel information, and to RSVP.
                   </motion.p>
 
-                  {isViewMode && canShareInvite && (
-                    <motion.a
-                      href={getWhatsAppShareUrl()}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      initial={{ opacity: 0, y: 20 }}
-                      whileInView={{ opacity: 1, y: 0 }}
-                      viewport={{ once: true }}
-                      transition={{ duration: 0.6, delay: 0.3 }}
-                      className="inline-flex items-center gap-2 mt-8 bg-[#25D366] text-white px-8 py-3 rounded-full font-bold hover:bg-[#20bd5a] transition-colors shadow-md"
-                    >
-                      <WhatsAppIcon />
-                      <span>Share on WhatsApp</span>
-                    </motion.a>
-                  )}
 
                   <div className="max-w-2xl mx-auto mt-16 text-left">
-                    {((eventData.schedule && eventData.schedule.toLowerCase() !== 'skip') || !isViewMode) && (
+                    {has('schedule') && ((eventData.schedule && eventData.schedule.toLowerCase() !== 'skip') || !isViewMode) && (
                       <motion.div 
                         initial={{ opacity: 0, y: 20 }}
                         whileInView={{ opacity: 1, y: 0 }}
@@ -1899,7 +1887,7 @@ export default function App() {
                     )}
 
                     {/* Bon Appétit Menu Section */}
-                    {((eventData.menu && eventData.menu.toLowerCase() !== 'skip') || !isViewMode) && (
+                    {has('menu') && ((eventData.menu && eventData.menu.toLowerCase() !== 'skip') || !isViewMode) && (
                       <motion.div
                         initial={{ opacity: 0, y: 20 }}
                         whileInView={{ opacity: 1, y: 0 }}

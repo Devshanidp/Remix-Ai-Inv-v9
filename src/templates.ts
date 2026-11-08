@@ -46,30 +46,26 @@ export const EVENT_TYPES: EventType[] = [
   { id: 'other', label: 'Other Events', tagline: 'Moments worth sharing', image: img('1464366400600-7168b8af9bc3', 600), color: '#16917f', icon: '📅', comingSoon: true },
 ];
 
-export const TIERS: { id: Tier; label: string; price: number; benefits: string[] }[] = [
+export const TIERS: { id: Tier; label: string; price: number }[] = [
   {
     id: 'luxury',
     price: 999,
     label: 'Luxury',
-    benefits: ['Curtain-opening entrance with floral arch', 'Cinematic full-photo cover', 'Gold & jewel-tone palettes', 'Regal display fonts', 'Music, gallery, RSVP & guest list'],
   },
   {
     id: 'premium',
     price: 599,
     label: 'Premium',
-    benefits: ['Photo-led cover designs', 'Elegant serif & script fonts', 'Curated colour palettes', 'Music, gallery, RSVP & guest list'],
   },
   {
     id: 'standard',
     price: 399,
     label: 'Standard',
-    benefits: ['Soft faded photo cover', 'Classic serif headings', 'Music, gallery, RSVP & guest list'],
   },
   {
     id: 'basic',
     price: 0,
     label: 'Basic',
-    benefits: ['Clean, minimal layout', 'Simple neutral palettes', 'Gallery, RSVP & guest list'],
   },
 ];
 
@@ -123,3 +119,44 @@ export const templateStyle = (t: InviteTemplate): CSSProperties => ({
 });
 
 export const tierPrice = (tier: Tier) => TIERS.find(t => t.id === tier)?.price ?? 0;
+
+// Which invitation sections each tier includes. Higher tiers include everything below them.
+export type Section = 'countdown' | 'couple' | 'venue' | 'rsvp' | 'gallery' | 'schedule' | 'menu' | 'music' | 'memories';
+const TIER_EXTRAS: Record<Tier, Section[]> = {
+  basic: ['music'],
+  standard: ['couple', 'venue', 'rsvp', 'gallery'],
+  premium: ['countdown', 'schedule', 'menu'],
+  luxury: ['memories'],
+};
+const TIER_RANK: Tier[] = ['basic', 'standard', 'premium', 'luxury'];
+export const tierSections = (tier: Tier): Section[] =>
+  TIER_RANK.slice(0, TIER_RANK.indexOf(tier) + 1).flatMap(t => TIER_EXTRAS[t]);
+
+// Chat steps and the section each belongs to (no section = always asked).
+const STEP_SECTION: Record<string, Section | undefined> = {
+  groomParents: 'couple', brideParents: 'couple', groomPhoto: 'couple', bridePhoto: 'couple',
+  schedule: 'schedule', menu: 'menu', galleryPhotos: 'gallery', memoriesPhotos: 'memories', music: 'music',
+};
+export const STEP_ORDER = ['groomName', 'brideName', 'groomParents', 'brideParents', 'date', 'time', 'location', 'schedule', 'menu', 'bannerImage', 'groomPhoto', 'bridePhoto', 'galleryPhotos', 'memoriesPhotos', 'music', 'done'];
+export const nextStepFor = (tier: Tier, after: string) => {
+  const has = tierSections(tier);
+  const rest = STEP_ORDER.slice(STEP_ORDER.indexOf(after) + 1);
+  return rest.find(st => !STEP_SECTION[st] || has.includes(STEP_SECTION[st]!)) || 'done';
+};
+
+// Feature list shown in each tier's details card (✓ when the tier includes it).
+export const TIER_FEATURES: { label: string; from: Tier }[] = [
+  { label: 'Cover photo, names, date & location', from: 'basic' },
+  { label: 'Mobile-responsive design', from: 'basic' },
+  { label: 'Background music', from: 'basic' },
+  { label: 'Map & directions', from: 'basic' },
+  { label: 'Couple photos & parents', from: 'standard' },
+  { label: 'Photo gallery', from: 'standard' },
+  { label: 'RSVP & guest list', from: 'standard' },
+  { label: 'Venue section', from: 'standard' },
+  { label: 'Live countdown timer', from: 'premium' },
+  { label: 'Event schedule & food menu', from: 'premium' },
+  { label: 'Memories slideshow', from: 'luxury' },
+  { label: 'Curtain-opening entrance', from: 'luxury' },
+];
+export const tierIncludes = (tier: Tier, from: Tier) => TIER_RANK.indexOf(tier) >= TIER_RANK.indexOf(from);

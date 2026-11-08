@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { ArrowLeft, ArrowRight, Check, Crown, Gem, Plus, Sparkle, Star, X } from 'lucide-react';
-import { EVENT_TYPES, TEMPLATES, TIERS, type EventType, type InviteTemplate, type Tier } from './templates';
+import { ArrowLeft, ArrowRight, BadgeCheck, Check, Crown, Gem, Heart, PencilLine, Plus, ShieldCheck, Sparkle, Star, X } from 'lucide-react';
+import { EVENT_TYPES, TEMPLATES, TIERS, TIER_FEATURES, tierIncludes, type EventType, type InviteTemplate, type Tier } from './templates';
 import { FloralArch, sceneColors } from './GrandEntrance';
 
 const TIER_ICONS: Record<Tier, React.ElementType> = { luxury: Crown, premium: Gem, standard: Star, basic: Sparkle };
@@ -64,6 +64,33 @@ export const EventHome = ({ onSelect }: { onSelect: (event: EventType) => void }
           </motion.button>
         ))}
       </div>
+
+      <section className="max-w-md mx-auto mt-14 text-center">
+        <div className="w-16 h-16 mx-auto rounded-2xl bg-[#fbe3e8] flex items-center justify-center text-[#b83a5a]">
+          <Heart size={28} fill="currentColor" />
+        </div>
+        <h2 className="text-2xl md:text-3xl font-bold text-white mt-5">Free to design — pay only when you're ready</h2>
+        <p className="text-gray-400 mt-2">Personalize your invitation website with zero commitment</p>
+        <div className="mt-6 space-y-3 text-left">
+          {[
+            { icon: PencilLine, text: 'Edit and preview multiple times' },
+            { icon: BadgeCheck, text: "Pay only when you're ready to share" },
+            { icon: ShieldCheck, text: 'No ads · No hidden charges' },
+          ].map(({ icon: Icon, text }) => (
+            <div key={text} className="flex items-center gap-4 bg-white/[0.06] border border-white/10 rounded-2xl px-4 py-3">
+              <span className="w-11 h-11 rounded-xl bg-[#fbe3e8] text-[#b83a5a] flex items-center justify-center shrink-0"><Icon size={20} /></span>
+              <span className="text-gray-200">{text}</span>
+            </div>
+          ))}
+        </div>
+        <button
+          type="button"
+          onClick={() => onSelect(EVENT_TYPES[0])}
+          className="mt-8 w-full rounded-2xl py-4 text-white font-bold text-lg flex items-center justify-center gap-2 bg-gradient-to-r from-[#b83a5a] to-[#d65f7a] hover:brightness-110 transition"
+        >
+          Choose a Design <ArrowRight size={20} />
+        </button>
+      </section>
     </main>
   </div>
 );
@@ -165,7 +192,7 @@ export const TemplatePicker = ({
         <button onClick={() => setShowBenefits(v => !v)} className="w-full flex items-center justify-between text-left">
           <span className="text-gray-200">{tierInfo.label} tier details</span>
           <span className="flex items-center gap-3 text-gray-400">
-            <span className="hidden sm:inline">View benefits</span>
+            <span className="hidden sm:inline">{showBenefits ? 'Hide details' : 'View details'}</span>
             <span className={`w-9 h-9 rounded-full border border-white/20 flex items-center justify-center text-[#e0566a] transition-transform ${showBenefits ? 'rotate-45' : ''}`}>
               <Plus size={18} />
             </span>
@@ -173,18 +200,32 @@ export const TemplatePicker = ({
         </button>
         <AnimatePresence initial={false}>
           {showBenefits && (
-            <motion.ul
+            <motion.div
               initial={{ height: 0, opacity: 0 }}
               animate={{ height: 'auto', opacity: 1 }}
               exit={{ height: 0, opacity: 0 }}
-              className="overflow-hidden grid sm:grid-cols-2 gap-2 pt-4"
+              className="overflow-hidden"
             >
-              {tierInfo.benefits.map(b => (
-                <li key={b} className="flex items-center gap-2 text-gray-300">
-                  <Check size={16} className="text-[#e0566a] shrink-0" /> {b}
-                </li>
-              ))}
-            </motion.ul>
+              <div className="mt-4 bg-[#fdfbf7] rounded-3xl p-5 md:p-7 border border-white/10">
+                <h3 className="text-2xl md:text-3xl text-[#4a3237] font-['Playfair_Display',serif]">{tierInfo.label} {eventLabel} Templates</h3>
+                <ul className="grid sm:grid-cols-2 gap-x-8 gap-y-3 mt-5">
+                  {TIER_FEATURES.map(f => {
+                    const ok = tierIncludes(tier, f.from);
+                    return (
+                      <li key={f.label} className={`flex items-center gap-3 ${ok ? 'text-[#4a3237]' : 'text-gray-400'}`}>
+                        <span className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 ${ok ? 'bg-[#efe6dc] text-[#8a6a52]' : 'bg-gray-100 text-gray-400'}`}>
+                          {ok ? <Check size={15} /> : <X size={14} />}
+                        </span>
+                        {ok ? f.label : `No ${f.label.charAt(0).toLowerCase()}${f.label.slice(1)}`}
+                      </li>
+                    );
+                  })}
+                </ul>
+                <div className="border-t border-gray-200 mt-6 pt-4 flex items-center justify-center gap-2 text-xs md:text-sm text-gray-500">
+                  <ShieldCheck size={16} /> {tierInfo.price === 0 ? 'Free forever · No hidden fees' : 'Secure UPI payment · Pay only when you share · No hidden fees'}
+                </div>
+              </div>
+            </motion.div>
           )}
         </AnimatePresence>
       </div>
